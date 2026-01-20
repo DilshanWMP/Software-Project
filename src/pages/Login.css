@@ -1,0 +1,146 @@
+/* src/pages/Login.css */
+.login-container {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Approximation of the medical blue gradient background */
+    background: radial-gradient(circle at center, #bfdbfe, #3b82f6);
+    /* Light blue to blue */
+    background-size: cover;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Optional: Adding a subtle pattern overlay if possible via CSS */
+.login-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0.1;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 1) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(255, 255, 255, 1) 2px, transparent 2px);
+    background-size: 50px 50px;
+    pointer-events: none;
+}
+
+.login-card {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 40px;
+    border-radius: 12px;
+    width: 380px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+}
+
+.icon-circle {
+    background: #1f2937;
+    /* Dark Grey */
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px auto;
+    color: white;
+}
+
+.login-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 5px 0;
+}
+
+.login-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0 0 30px 0;
+}
+
+.input-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.input-label {
+    display: block;
+    font-size: 0.875rem;
+    color: #374151;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.password-input-wrapper {
+    position: relative;
+}
+
+.login-input {
+    width: 100%;
+    padding: 12px;
+    padding-right: 40px;
+    /* Space for eye icon */
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+}
+
+.btn-login {
+    width: 100%;
+    padding: 12px;
+    background-color: #1f2937;
+    /* Dark Grey/Black */
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-bottom: 20px;
+}
+
+.btn-login:hover {
+    background-color: #111827;
+}
+
+.forgot-password {
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.forgot-password:hover {
+    text-decoration: underline;
+}
