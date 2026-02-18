@@ -1,0 +1,61 @@
+﻿<Window x:Class="EndoscopyApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewmodels="clr-namespace:EndoscopyApp.ViewModels"
+        xmlns:views="clr-namespace:EndoscopyApp.Views"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d"
+        TextElement.Foreground="{DynamicResource MaterialDesignBody}"
+        TextElement.FontWeight="Regular"
+        TextElement.FontSize="13"
+        TextOptions.TextFormattingMode="Ideal" 
+        TextOptions.TextRenderingMode="Auto"        
+        Background="{DynamicResource MaterialDesignPaper}"
+        FontFamily="{DynamicResource MaterialDesignFont}"
+        Title="{Binding PageTitle}" Height="768" Width="1024">
+    
+    <Window.Resources>
+        <DataTemplate DataType="{x:Type viewmodels:LoginViewModel}">
+            <views:LoginView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:LiveViewModel}">
+            <views:LiveView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:RecordViewModel}">
+            <views:RecordView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:GalleryViewModel}">
+            <views:GalleryView/>
+        </DataTemplate>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Sidebar -->
+        <materialDesign:Card Grid.Column="0" Width="60" Visibility="{Binding SidebarVisibility}" VerticalAlignment="Stretch" Background="{DynamicResource MaterialDesignPaper}">
+            <StackPanel VerticalAlignment="Center">
+                <Button Command="{Binding NavigateToLiveCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Live View" Padding="4">
+                    <materialDesign:PackIcon Kind="Cctv" Width="30" Height="30"/>
+                </Button>
+                <Button Command="{Binding NavigateToRecordCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Record" Padding="4" Margin="0,20,0,0">
+                    <materialDesign:PackIcon Kind="RecordRec" Width="30" Height="30" Foreground="Red"/>
+                </Button>
+                <Button Command="{Binding NavigateToGalleryCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Gallery" Padding="4" Margin="0,20,0,0">
+                    <materialDesign:PackIcon Kind="ImageMultiple" Width="30" Height="30"/>
+                </Button>
+                 <Button Command="{Binding LogoutCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Logout" Padding="4" Margin="0,50,0,0">
+                    <materialDesign:PackIcon Kind="Logout" Width="30" Height="30"/>
+                </Button>
+            </StackPanel>
+        </materialDesign:Card>
+
+        <!-- Content -->
+        <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" />
+    </Grid>
+</Window>
