@@ -32,7 +32,7 @@ namespace EndoscopyApp.ViewModels
         [RelayCommand]
         private void Settings()
         {
-            // Placeholder for settings
+            _mainViewModel.NavigateToSettings();
         }
 
         [RelayCommand]

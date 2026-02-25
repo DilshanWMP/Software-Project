@@ -95,6 +95,17 @@ namespace EndoscopyApp.ViewModels
         }
 
         [RelayCommand]
+        public void NavigateToSettings()
+        {
+            if (CurrentViewModel is SettingsViewModel) return;
+
+             if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+
+            NavigateTo(new SettingsViewModel(this));
+            PageTitle = "System Settings";
+        }
+
+        [RelayCommand]
         public void Logout()
         {
              if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();

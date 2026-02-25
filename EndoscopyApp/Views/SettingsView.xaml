@@ -1,0 +1,97 @@
+<UserControl x:Class="EndoscopyApp.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:EndoscopyApp.Views"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="768" d:DesignWidth="1024"
+             Background="#F5F7FA">
+    
+    <Grid Margin="50">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,30">
+            <Button Command="{Binding GoBackCommand}" 
+                    Style="{StaticResource MaterialDesignToolButton}" 
+                    Margin="0,0,15,0" Width="40" Height="40">
+                <materialDesign:PackIcon Kind="ArrowLeft" Width="24" Height="24" Foreground="#333"/>
+            </Button>
+            <TextBlock Text="Settings" FontSize="32" FontWeight="Bold" Foreground="#1A202C" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <materialDesign:Card Grid.Row="1" Background="White" UniformCornerRadius="16" materialDesign:ElevationAssist.Elevation="Dp3" Padding="40" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+            <StackPanel>
+                
+                <!-- System Settings Section Header -->
+                <TextBlock Text="System Configuration" FontSize="18" FontWeight="SemiBold" Foreground="#4A5568" Margin="0,0,0,20"/>
+
+                <!-- Media Save Path -->
+                <TextBlock Text="Media Save Directory" FontSize="14" FontWeight="Medium" Foreground="#718096" Margin="0,0,0,5"/>
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox Grid.Column="0" Text="{Binding MediaPath, UpdateSourceTrigger=PropertyChanged}" 
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             materialDesign:HintAssist.Hint="Folder path to save videos and images"
+                             Padding="15" Height="50" IsReadOnly="False"/>
+                             
+                    <Button Grid.Column="1" Command="{Binding BrowseFolderCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="#E2E8F0" Foreground="#4A5568" BorderBrush="Transparent"
+                            Margin="10,0,0,0" Height="50" Padding="20,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FolderOpenOutline" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Browse" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <Separator Margin="0,20,0,30" Background="#E2E8F0"/>
+
+                <!-- Security Section Header -->
+                <TextBlock Text="Security Configuration" FontSize="18" FontWeight="SemiBold" Foreground="#4A5568" Margin="0,0,0,20"/>
+
+                <!-- Admin Password -->
+                <TextBlock Text="Administrator Password" FontSize="14" FontWeight="Medium" Foreground="#718096" Margin="0,0,0,5"/>
+                <Grid Margin="0,0,0,30">
+                    <TextBox Text="{Binding AdminPassword, UpdateSourceTrigger=PropertyChanged}" 
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             materialDesign:HintAssist.Hint="Set a new admin password"
+                             Padding="15" Height="50"/>
+                </Grid>
+
+                <!-- Actions -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Command="{Binding GoBackCommand}"
+                            Style="{StaticResource MaterialDesignFlatButton}"
+                            Foreground="#718096" Height="48" Padding="30,0" Margin="0,0,10,0"
+                            materialDesign:ButtonAssist.CornerRadius="8">
+                        <TextBlock Text="Cancel" FontWeight="SemiBold"/>
+                    </Button>
+                    
+                    <Button Command="{Binding SaveSettingsCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="#4C51BF" Foreground="White" BorderBrush="Transparent"
+                            Height="48" Padding="40,0"
+                            materialDesign:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ContentSave" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Save Changes" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+            </StackPanel>
+        </materialDesign:Card>
+    </Grid>
+</UserControl>
