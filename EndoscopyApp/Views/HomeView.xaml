@@ -99,8 +99,8 @@
                                 <Border Background="#3EFFFFFF" CornerRadius="30" Width="80" Height="80" Margin="0,0,0,25">
                                     <materialDesign:PackIcon Kind="FolderPlay" Width="40" Height="40" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
                                 </Border>
-                                <TextBlock Text="Recorded Videos" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                <TextBlock Text="View and manage recorded procedures" Foreground="#E2E8F0" FontSize="14" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="200"/>
+                                <TextBlock Text="Record Video" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                <TextBlock Text="Start a new recording session" Foreground="#E2E8F0" FontSize="14" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="200"/>
                             </StackPanel>
                         </Grid>
                     </materialDesign:Card>

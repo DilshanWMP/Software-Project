@@ -65,53 +65,56 @@ namespace EndoscopyApp.ViewModels
         }
 
         public void NavigateTo(ViewModelBase viewModel)
-        {
-             CurrentViewModel = viewModel;
-              // Show sidebar if we are not on Login, Home, Patients, RecordedVideos or PatientMedia page
-              if (viewModel is LoginViewModel || viewModel is HomeViewModel || viewModel is PatientsViewModel || 
-                  viewModel is RecordedVideosViewModel || viewModel is PatientMediaViewModel)
-              {
-                  SidebarVisibility = Visibility.Collapsed;
-              }
-              else
-              {
-                  SidebarVisibility = Visibility.Visible;
-              }
-        }
+{
+    CurrentViewModel = viewModel;
+    
+    // Combine both lists from both branches
+    if (viewModel is LoginViewModel || viewModel is HomeViewModel || 
+        viewModel is PatientsViewModel || viewModel is LiveViewModel || 
+        viewModel is RecordViewModel || viewModel is SelectPatientViewModel ||
+        viewModel is RecordedVideosViewModel || viewModel is PatientMediaViewModel)
+    {
+        SidebarVisibility = Visibility.Collapsed;
+    }
+    else
+    {
+        SidebarVisibility = Visibility.Visible;
+    }
+}
 
         [RelayCommand]
         public void NavigateToLive()
         {
-            if (CurrentViewModel is not LiveViewModel)
+            if (CurrentViewModel is not SelectPatientViewModel)
             {
                 // Cleanup previous view if needed
                 if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
-                NavigateTo(new LiveViewModel());
-                PageTitle = "Live View";
+                NavigateTo(new SelectPatientViewModel(this));
+                PageTitle = "Live Video";
             }
         }
 
         [RelayCommand]
         public void NavigateToRecord()
         {
-            if (CurrentViewModel is RecordViewModel) return;
-            
+            if (CurrentViewModel is SelectPatientViewModel) return;
+
             // Cleanup previous
             if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
 
-            NavigateTo(new RecordViewModel());
-            PageTitle = "Registration & Record";
+            NavigateTo(new SelectPatientViewModel(this));
+            PageTitle = "Live Video";
         }
 
         [RelayCommand]
         public void NavigateToGallery()
         {
-            if (CurrentViewModel is GalleryViewModel) return;
-
-             if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
-
-            NavigateTo(new GalleryViewModel());
-            PageTitle = "Use Gallery";
+            if (CurrentViewModel is not RecordViewModel)
+            {
+                if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+                NavigateTo(new RecordViewModel(this));
+                PageTitle = "Live Recording";
+            }
         }
 
         [RelayCommand]
@@ -128,8 +131,8 @@ namespace EndoscopyApp.ViewModels
         [RelayCommand]
         public void Logout()
         {
-             if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
-             NavigateTo(new LoginViewModel(this));
+            if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+            NavigateTo(new LoginViewModel(this));
         }
     }
 }

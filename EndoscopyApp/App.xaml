@@ -17,6 +17,9 @@
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <local:BooleanToEyeIconConverter x:Key="BooleanToEyeIconConverter" />
             <local:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
+            <local:FullscreenMarginConverter x:Key="FullscreenMarginConverter" />
+            <local:FullscreenCornerRadiusConverter x:Key="FullscreenCornerRadiusConverter" />
+            <local:FullscreenIconConverter x:Key="FullscreenIconConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
