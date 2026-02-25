@@ -10,6 +10,7 @@ namespace EndoscopyApp.Models
         public int Age { get; set; }
         public string Gender { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
+        public string? Notes { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

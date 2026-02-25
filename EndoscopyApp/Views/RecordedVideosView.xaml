@@ -1,0 +1,85 @@
+<UserControl x:Class="EndoscopyApp.Views.RecordedVideosView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="768" d:DesignWidth="1024"
+             Background="#F7FAFC">
+    <Grid Margin="40,30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,25">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Command="{Binding NavigateBackCommand}" 
+                        Style="{StaticResource MaterialDesignFlatButton}" 
+                        Width="45" Height="45" Margin="0,0,20,0">
+                    <materialDesign:PackIcon Kind="ArrowLeft" Width="28" Height="28"/>
+                </Button>
+                <TextBlock Text="Recorded Videos" FontSize="30" FontWeight="ExtraBold" VerticalAlignment="Center" Foreground="#1A202C"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Container -->
+        <materialDesign:Card Grid.Row="1" Background="White">
+            <Grid Margin="30">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Select a Patient" FontSize="22" FontWeight="Bold" Foreground="#2D3748" Margin="0,0,0,30"/>
+
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding Patients}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="3" Margin="-10"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding DataContext.SelectPatientCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Height="Auto" Margin="10"
+                                        Style="{StaticResource MaterialDesignFlatButton}"
+                                        Padding="0" HorizontalContentAlignment="Stretch">
+                                    <materialDesign:Card Background="White">
+                                        <Grid Margin="20">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Profile Icon -->
+                                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="24" Background="#EBF4FF" VerticalAlignment="Top">
+                                                <materialDesign:PackIcon Kind="Account" Width="28" Height="28" Foreground="#4C51BF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+
+                                            <StackPanel Grid.Column="1" Margin="15,0,0,0">
+                                                <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="Bold" Foreground="#2D3748" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" FontSize="14" Foreground="#718096" Margin="0,4,0,0"/>
+                                                
+                                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                    <TextBlock Text="{Binding Age, StringFormat='{}{0} years   '}" FontSize="14" Foreground="#4A5568"/>
+                                                    <TextBlock Text="{Binding Gender}" FontSize="14" Foreground="#4A5568"/>
+                                                </StackPanel>
+                                                
+                                                <TextBlock Text="{Binding Phone}" FontSize="14" Foreground="#718096" Margin="0,8,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </materialDesign:Card>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </materialDesign:Card>
+    </Grid>
+</UserControl>

@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using EndoscopyApp.Models;
 using System.Windows;
 using EndoscopyApp.Services;
 
@@ -43,6 +44,24 @@ namespace EndoscopyApp.ViewModels
                 NavigateTo(new PatientsViewModel(this));
                 PageTitle = "Patient Details";
             }
+        }
+
+        [RelayCommand]
+        public void NavigateToRecordedVideos()
+        {
+            if (CurrentViewModel is not RecordedVideosViewModel)
+            {
+                if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+                NavigateTo(new RecordedVideosViewModel(this));
+                PageTitle = "Recorded Videos";
+            }
+        }
+
+        public void NavigateToPatientMedia(Patient patient)
+        {
+            if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+            NavigateTo(new PatientMediaViewModel(this, patient));
+            PageTitle = "Recorded Media";
         }
 
         public void NavigateTo(ViewModelBase viewModel)
@@ -96,6 +115,17 @@ namespace EndoscopyApp.ViewModels
                 NavigateTo(new RecordViewModel(this));
                 PageTitle = "Live Recording";
             }
+        }
+
+        [RelayCommand]
+        public void NavigateToSettings()
+        {
+            if (CurrentViewModel is SettingsViewModel) return;
+
+             if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+
+            NavigateTo(new SettingsViewModel(this));
+            PageTitle = "System Settings";
         }
 
         [RelayCommand]
