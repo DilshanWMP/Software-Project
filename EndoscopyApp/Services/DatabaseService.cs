@@ -26,6 +26,7 @@ namespace EndoscopyApp.Services
             command.CommandText = @"
                 CREATE TABLE IF NOT EXISTS Patients (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Nic TEXT,
                     Name TEXT NOT NULL,
                     Age INTEGER,
                     Gender TEXT,
@@ -43,6 +44,16 @@ namespace EndoscopyApp.Services
                 );
             ";
             command.ExecuteNonQuery();
+
+            try
+            {
+                command.CommandText = "ALTER TABLE Patients ADD COLUMN Nic TEXT;";
+                command.ExecuteNonQuery();
+            }
+            catch (SqliteException ex) when (ex.SqliteErrorCode == 1)
+            {
+                // Column already exists, ignore
+            }
 
             // Migration: Add Notes column if it doesn't exist
             try
@@ -62,10 +73,11 @@ namespace EndoscopyApp.Services
             connection.Open();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO Patients (Name, Age, Gender, Phone, Notes, CreatedAt)
-                VALUES ($name, $age, $gender, $phone, $notes, $createdAt);
+                INSERT INTO Patients (Nic, Name, Age, Gender, Phone, Notes, CreatedAt)
+                VALUES ($nic, $name, $age, $gender, $phone, $notes, $createdAt);
                 SELECT last_insert_rowid();
             ";
+            command.Parameters.AddWithValue("$nic", (object?)patient.Nic ?? DBNull.Value);
             command.Parameters.AddWithValue("$name", patient.Name);
             command.Parameters.AddWithValue("$age", patient.Age);
             command.Parameters.AddWithValue("$gender", patient.Gender);
@@ -82,7 +94,7 @@ namespace EndoscopyApp.Services
             using var connection = new SqliteConnection(_connectionString);
             connection.Open();
             var command = connection.CreateCommand();
-            command.CommandText = "SELECT Id, Name, Age, Gender, Phone, Notes, CreatedAt FROM Patients ORDER BY CreatedAt DESC";
+            command.CommandText = "SELECT Id, Nic, Name, Age, Gender, Phone, Notes, CreatedAt FROM Patients ORDER BY CreatedAt DESC";
             
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -90,12 +102,13 @@ namespace EndoscopyApp.Services
                 patients.Add(new Patient
                 {
                     Id = reader.GetInt32(0),
-                    Name = reader.GetString(1),
-                    Age = reader.IsDBNull(2) ? 0 : reader.GetInt32(2),
-                    Gender = reader.IsDBNull(3) ? "" : reader.GetString(3),
-                    Phone = reader.IsDBNull(4) ? "" : reader.GetString(4),
-                    Notes = reader.IsDBNull(5) ? "" : reader.GetString(5),
-                    CreatedAt = DateTime.Parse(reader.GetString(6))
+                    Nic = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                    Name = reader.GetString(2),
+                    Age = reader.IsDBNull(3) ? 0 : reader.GetInt32(3),
+                    Gender = reader.IsDBNull(4) ? "" : reader.GetString(4),
+                    Phone = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                    Notes = reader.IsDBNull(6) ? "" : reader.GetString(6),
+                    CreatedAt = DateTime.Parse(reader.GetString(7))
                 });
             }
             return patients;
@@ -108,9 +121,10 @@ namespace EndoscopyApp.Services
             var command = connection.CreateCommand();
             command.CommandText = @"
                 UPDATE Patients 
-                SET Name = $name, Age = $age, Gender = $gender, Phone = $phone, Notes = $notes
+                SET Nic = $nic, Name = $name, Age = $age, Gender = $gender, Phone = $phone, Notes = $notes
                 WHERE Id = $id;
             ";
+            command.Parameters.AddWithValue("$nic", (object?)patient.Nic ?? DBNull.Value);
             command.Parameters.AddWithValue("$name", patient.Name);
             command.Parameters.AddWithValue("$age", patient.Age);
             command.Parameters.AddWithValue("$gender", patient.Gender);

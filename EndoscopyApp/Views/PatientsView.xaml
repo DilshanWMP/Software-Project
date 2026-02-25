@@ -77,7 +77,7 @@
                         </DataGrid.RowStyle>
                         
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Patient ID" Binding="{Binding Id, StringFormat='P-{0:D4}'}" Width="150">
+                            <DataGridTextColumn Header="NIC Number" Binding="{Binding Nic}" Width="150">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock" BasedOn="{StaticResource MaterialDesignDataGridTextColumnStyle}">
                                         <Setter Property="Padding" Value="24,0"/>
@@ -198,8 +198,8 @@
 
                         <!-- Row 1 -->
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,15">
-                            <TextBlock Text="Patient ID *" Foreground="#4A5568" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
-                            <TextBox Text="{Binding NewPatientId}" IsReadOnly="True" materialDesign:TextFieldAssist.TextFieldCornerRadius="8" Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                            <TextBlock Text="NIC Number *" Foreground="#4A5568" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBox Text="{Binding NewPatientId}" materialDesign:TextFieldAssist.TextFieldCornerRadius="8" Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,15">
                             <TextBlock Text="Full Name *" Foreground="#4A5568" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
