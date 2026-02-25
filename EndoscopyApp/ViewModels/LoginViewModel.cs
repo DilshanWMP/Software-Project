@@ -35,7 +35,7 @@ namespace EndoscopyApp.ViewModels
             if (Password == "admin123")
             {
                 ErrorMessage = "";
-                _mainViewModel.NavigateTo(new LiveViewModel());
+                _mainViewModel.NavigateTo(new HomeViewModel(_mainViewModel));
             }
             else
             {

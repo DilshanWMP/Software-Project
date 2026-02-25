@@ -20,6 +20,12 @@
         <DataTemplate DataType="{x:Type viewmodels:LoginViewModel}">
             <views:LoginView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:HomeViewModel}">
+            <views:HomeView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:PatientsViewModel}">
+            <views:PatientsView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels:LiveViewModel}">
             <views:LiveView/>
         </DataTemplate>
@@ -40,7 +46,10 @@
         <!-- Sidebar -->
         <materialDesign:Card Grid.Column="0" Width="60" Visibility="{Binding SidebarVisibility}" VerticalAlignment="Stretch" Background="{DynamicResource MaterialDesignPaper}">
             <StackPanel VerticalAlignment="Center">
-                <Button Command="{Binding NavigateToLiveCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Live View" Padding="4">
+                <Button Command="{Binding NavigateToHomeCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Home" Padding="4">
+                    <materialDesign:PackIcon Kind="Home" Width="30" Height="30"/>
+                </Button>
+                <Button Command="{Binding NavigateToLiveCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Live View" Padding="4" Margin="0,20,0,0">
                     <materialDesign:PackIcon Kind="Cctv" Width="30" Height="30"/>
                 </Button>
                 <Button Command="{Binding NavigateToRecordCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Record" Padding="4" Margin="0,20,0,0">

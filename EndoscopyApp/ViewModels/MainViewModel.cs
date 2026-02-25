@@ -23,18 +23,40 @@ namespace EndoscopyApp.ViewModels
             SidebarVisibility = Visibility.Collapsed;
         }
 
+        [RelayCommand]
+        public void NavigateToHome()
+        {
+            if (CurrentViewModel is not HomeViewModel)
+            {
+                if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+                NavigateTo(new HomeViewModel(this));
+                PageTitle = "Home";
+            }
+        }
+
+        [RelayCommand]
+        public void NavigateToPatients()
+        {
+            if (CurrentViewModel is not PatientsViewModel)
+            {
+                if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+                NavigateTo(new PatientsViewModel(this));
+                PageTitle = "Patient Details";
+            }
+        }
+
         public void NavigateTo(ViewModelBase viewModel)
         {
              CurrentViewModel = viewModel;
-             // Show sidebar if we are not on Login page
-             if (viewModel is LoginViewModel)
-             {
-                 SidebarVisibility = Visibility.Collapsed;
-             }
-             else
-             {
-                 SidebarVisibility = Visibility.Visible;
-             }
+              // Show sidebar if we are not on Login, Home or Patients page
+              if (viewModel is LoginViewModel || viewModel is HomeViewModel || viewModel is PatientsViewModel)
+              {
+                  SidebarVisibility = Visibility.Collapsed;
+              }
+              else
+              {
+                  SidebarVisibility = Visibility.Visible;
+              }
         }
 
         [RelayCommand]
