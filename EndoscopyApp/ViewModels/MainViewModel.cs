@@ -46,20 +46,22 @@ namespace EndoscopyApp.ViewModels
         }
 
         public void NavigateTo(ViewModelBase viewModel)
-        {
-            CurrentViewModel = viewModel;
-            // Hide sidebar for pages that have their own navigation or are full-screen
-            if (viewModel is LoginViewModel || viewModel is HomeViewModel ||
-                viewModel is PatientsViewModel || viewModel is LiveViewModel ||
-                viewModel is RecordViewModel || viewModel is SelectPatientViewModel)
-            {
-                SidebarVisibility = Visibility.Collapsed;
-            }
-            else
-            {
-                SidebarVisibility = Visibility.Visible;
-            }
-        }
+{
+    CurrentViewModel = viewModel;
+    
+    // Combine both lists from both branches
+    if (viewModel is LoginViewModel || viewModel is HomeViewModel || 
+        viewModel is PatientsViewModel || viewModel is LiveViewModel || 
+        viewModel is RecordViewModel || viewModel is SelectPatientViewModel ||
+        viewModel is RecordedVideosViewModel || viewModel is PatientMediaViewModel)
+    {
+        SidebarVisibility = Visibility.Collapsed;
+    }
+    else
+    {
+        SidebarVisibility = Visibility.Visible;
+    }
+}
 
         [RelayCommand]
         public void NavigateToLive()
