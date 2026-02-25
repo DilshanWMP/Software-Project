@@ -127,8 +127,9 @@ namespace EndoscopyApp.ViewModels
              }
              else
              {
-                 // Create directory for patient
-                 string patientDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", _currentPatient.Id.ToString());
+                 var settingsService = new SettingsService();
+                 var settings = settingsService.LoadSettings();
+                 string patientDir = Path.Combine(settings.MediaPath, _currentPatient.Id.ToString());
                  Directory.CreateDirectory(patientDir);
                  string fileName = $"REC_{DateTime.Now:yyyyMMdd_HHmmss}.avi";
                  string filePath = Path.Combine(patientDir, fileName);
@@ -150,7 +151,9 @@ namespace EndoscopyApp.ViewModels
              var frame = _videoService.CaptureSnapshot();
              if (!frame.Empty())
              {
-                 string patientDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", _currentPatient.Id.ToString());
+                 var settingsService = new SettingsService();
+                 var settings = settingsService.LoadSettings();
+                 string patientDir = Path.Combine(settings.MediaPath, _currentPatient.Id.ToString());
                  Directory.CreateDirectory(patientDir);
                  string fileName = $"IMG_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
                  string filePath = Path.Combine(patientDir, fileName);
