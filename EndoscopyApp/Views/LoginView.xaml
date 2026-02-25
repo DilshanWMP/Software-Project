@@ -6,22 +6,68 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:viewmodels="clr-namespace:EndoscopyApp.ViewModels"
              mc:Ignorable="d" 
-             Height="450" Width="800">
+             d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <materialDesign:Card Width="300" Padding="20" VerticalAlignment="Center" UniformCornerRadius="10">
+        <Grid.Background>
+            <ImageBrush ImageSource="/Assets/background.png" Stretch="UniformToFill"/>
+        </Grid.Background>
+
+        <materialDesign:Card Width="450" Padding="40" VerticalAlignment="Center" UniformCornerRadius="14" Background="White"
+                             materialDesign:ShadowAssist.ShadowDepth="Depth3">
             <StackPanel>
-                <TextBlock Text="Endoscopy Capture" Style="{StaticResource MaterialDesignHeadline5TextBlock}" HorizontalAlignment="Center" Margin="0,0,0,15"/>
-                <TextBlock Text="Please Login" Style="{StaticResource MaterialDesignBody1TextBlock}" HorizontalAlignment="Center" Opacity="0.6" Margin="0,0,0,15"/>
+                <!-- Lock Icon -->
+                <Border Width="60" Height="60" Background="#2c3e50" CornerRadius="30" HorizontalAlignment="Center" Margin="0,20,0,15">
+                    <materialDesign:PackIcon Kind="Lock" Foreground="White" Width="30" Height="30" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
 
-                <PasswordBox x:Name="UserPasswordBox" 
-                             materialDesign:HintAssist.Hint="Password"
-                             Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
-                             PasswordChanged="PasswordBox_PasswordChanged"
-                             Margin="0,0,0,15"/>
+                <TextBlock Text="Endoscope Recording System" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" Foreground="#2c2c2c"/>
+                <TextBlock Text="Staff Access Only" FontSize="12" Opacity="0.6" HorizontalAlignment="Center" Margin="0,0,0,25" Foreground="#666666"/>
 
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                <TextBlock Text="Password" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="#333333"/>
+                <Grid Margin="0,0,0,20">
+                    <PasswordBox x:Name="UserPasswordBox" 
+                                 materialDesign:HintAssist.Hint="Enter password"
+                                 Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                 PasswordChanged="PasswordBox_PasswordChanged"
+                                 Padding="0,5"
+                                 Visibility="{Binding IsPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                    
+                    <TextBox Text="{Binding Password}" 
+                             materialDesign:HintAssist.Hint="Enter password"
+                             Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             Padding="0,5"
+                             Visibility="{Binding IsPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    
+                    <Button Command="{Binding TogglePasswordVisibilityCommand}" 
+                            HorizontalAlignment="Right" 
+                            Style="{StaticResource MaterialDesignFlatButton}" 
+                            Padding="0" Width="30" Height="30" Margin="0,-5,0,0">
+                        <materialDesign:PackIcon Kind="{Binding IsPasswordVisible, Converter={StaticResource BooleanToEyeIconConverter}}" Opacity="0.6"/>
+                    </Button>
+                </Grid>
 
-                <Button Command="{Binding LoginCommand}" Content="LOGIN" Style="{StaticResource MaterialDesignRaisedButton}"/>
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="#e74c3c" HorizontalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,15" FontSize="12"/>
+
+                <Button Command="{Binding LoginCommand}" 
+                        Content="Login" 
+                        Height="45"
+                        FontSize="15"
+                        Background="#34495e" 
+                        BorderBrush="#34495e"
+                        Style="{StaticResource MaterialDesignRaisedButton}">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="8"/>
+                        </Style>
+                    </Button.Resources>
+                </Button>
+
+                <Button Content="Change Password" 
+                        Style="{StaticResource MaterialDesignFlatButton}" 
+                        Foreground="#3498db" 
+                        FontSize="12" 
+                        Margin="0,15,0,0" 
+                        HorizontalAlignment="Center"/>
             </StackPanel>
         </materialDesign:Card>
     </Grid>

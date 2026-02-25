@@ -14,9 +14,18 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private string _errorMessage = "";
 
+        [ObservableProperty]
+        private bool _isPasswordVisible;
+
         public LoginViewModel(MainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
+        }
+
+        [RelayCommand]
+        private void TogglePasswordVisibility()
+        {
+            IsPasswordVisible = !IsPasswordVisible;
         }
 
         [RelayCommand]
@@ -25,8 +34,8 @@ namespace EndoscopyApp.ViewModels
             // Simple hardcoded password for Phase 1 as requested
             if (Password == "admin123")
             {
-               ErrorMessage = "";
-               _mainViewModel.NavigateTo(new LiveViewModel());
+                ErrorMessage = "";
+                _mainViewModel.NavigateTo(new LiveViewModel());
             }
             else
             {
