@@ -1,0 +1,170 @@
+<UserControl x:Class="EndoscopyApp.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:EndoscopyApp.Views"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="768" d:DesignWidth="1024"
+             Background="#F5F7FA">
+    
+    <Grid Margin="50">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,30">
+            <Button Command="{Binding GoBackCommand}" 
+                    Style="{StaticResource MaterialDesignToolButton}" 
+                    Margin="0,0,15,0" Width="40" Height="40">
+                <materialDesign:PackIcon Kind="ArrowLeft" Width="24" Height="24" Foreground="#333"/>
+            </Button>
+            <TextBlock Text="Settings" FontSize="32" FontWeight="Bold" Foreground="#1A202C" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Main Content -->
+        <!-- Wrap the main content in a ScrollViewer so it's always scrollable on small screens -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <materialDesign:Card Background="White" UniformCornerRadius="16" materialDesign:ElevationAssist.Elevation="Dp3" Padding="40" Margin="5" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+            <StackPanel>
+                
+                <!-- System Settings Section Header -->
+                <TextBlock Text="System Configuration" FontSize="18" FontWeight="SemiBold" Foreground="#4A5568" Margin="0,0,0,20"/>
+
+                <!-- Media Save Path -->
+                <TextBlock Text="Media Save Directory" FontSize="14" FontWeight="Medium" Foreground="#718096" Margin="0,0,0,5"/>
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox Grid.Column="0" Text="{Binding MediaPath, UpdateSourceTrigger=PropertyChanged}" 
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             materialDesign:HintAssist.Hint="Folder path to save videos and images"
+                             Padding="15" Height="50" IsReadOnly="False"/>
+                             
+                    <Button Grid.Column="1" Command="{Binding BrowseFolderCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="#E2E8F0" Foreground="#4A5568" BorderBrush="Transparent"
+                            Margin="10,0,0,0" Height="50" Padding="20,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FolderOpenOutline" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Browse" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <Separator Margin="0,20,0,30" Background="#E2E8F0"/>
+
+                <!-- Security Section Header -->
+                <TextBlock Text="Security Configuration" FontSize="18" FontWeight="SemiBold" Foreground="#4A5568" Margin="0,0,0,20"/>
+
+                <!-- Password Update -->
+                <TextBlock Text="Change Administrator Password (Optional)" FontSize="14" FontWeight="Medium" Foreground="#718096" Margin="0,0,0,5"/>
+                <Grid Margin="0,0,0,30">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Current Password -->
+                    <Grid Grid.Row="0" Margin="0,0,0,15">
+                        <PasswordBox x:Name="CurrentPasswordBox" 
+                                     materialDesign:HintAssist.Hint="Current Password"
+                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                     PasswordChanged="CurrentPasswordBox_PasswordChanged"
+                                     Padding="15,5" Height="50"
+                                     Visibility="{Binding IsCurrentPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                                     
+                        <TextBox Text="{Binding CurrentPassword, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Current Password"
+                                 Padding="15,5" Height="50"
+                                 Visibility="{Binding IsCurrentPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                 
+                        <Button Command="{Binding ToggleCurrentPasswordVisibilityCommand}" 
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Style="{StaticResource MaterialDesignFlatButton}" 
+                                Padding="0" Width="30" Height="30" Margin="0,0,10,0">
+                            <materialDesign:PackIcon Kind="{Binding IsCurrentPasswordVisible, Converter={StaticResource BooleanToEyeIconConverter}}" Opacity="0.6"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- New Password -->
+                    <Grid Grid.Row="1" Margin="0,0,0,15">
+                        <PasswordBox x:Name="NewPasswordBox" 
+                                     materialDesign:HintAssist.Hint="New Password"
+                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                     PasswordChanged="NewPasswordBox_PasswordChanged"
+                                     Padding="15,5" Height="50"
+                                     Visibility="{Binding IsNewPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                                     
+                        <TextBox Text="{Binding NewPassword, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="New Password"
+                                 Padding="15,5" Height="50"
+                                 Visibility="{Binding IsNewPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                 
+                        <Button Command="{Binding ToggleNewPasswordVisibilityCommand}" 
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Style="{StaticResource MaterialDesignFlatButton}" 
+                                Padding="0" Width="30" Height="30" Margin="0,0,10,0">
+                            <materialDesign:PackIcon Kind="{Binding IsNewPasswordVisible, Converter={StaticResource BooleanToEyeIconConverter}}" Opacity="0.6"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Confirm Password -->
+                    <Grid Grid.Row="2">
+                        <PasswordBox x:Name="ConfirmPasswordBox" 
+                                     materialDesign:HintAssist.Hint="Confirm New Password"
+                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                     PasswordChanged="ConfirmPasswordBox_PasswordChanged"
+                                     Padding="15,5" Height="50"
+                                     Visibility="{Binding IsConfirmPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                                     
+                        <TextBox Text="{Binding ConfirmPassword, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Confirm New Password"
+                                 Padding="15,5" Height="50"
+                                 Visibility="{Binding IsConfirmPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                 
+                        <Button Command="{Binding ToggleConfirmPasswordVisibilityCommand}" 
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Style="{StaticResource MaterialDesignFlatButton}" 
+                                Padding="0" Width="30" Height="30" Margin="0,0,10,0">
+                            <materialDesign:PackIcon Kind="{Binding IsConfirmPasswordVisible, Converter={StaticResource BooleanToEyeIconConverter}}" Opacity="0.6"/>
+                        </Button>
+                    </Grid>
+                </Grid>
+
+                <!-- Actions -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+                    <Button Command="{Binding GoBackCommand}"
+                            Style="{StaticResource MaterialDesignFlatButton}"
+                            Foreground="#718096" Height="48" Padding="30,0" Margin="0,0,10,0"
+                            materialDesign:ButtonAssist.CornerRadius="8">
+                        <TextBlock Text="Cancel" FontWeight="SemiBold"/>
+                    </Button>
+                    
+                    <Button Command="{Binding SaveSettingsCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="#4C51BF" Foreground="White" BorderBrush="Transparent"
+                            Height="48" Padding="40,0"
+                            materialDesign:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="ContentSave" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Save Changes" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+            </StackPanel>
+        </materialDesign:Card>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

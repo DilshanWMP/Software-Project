@@ -1,0 +1,164 @@
+<UserControl x:Class="EndoscopyApp.Views.PatientMediaView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             mc:Ignorable="d" 
+             d:DesignHeight="768" d:DesignWidth="1024"
+             Background="#F7FAFC">
+    <Grid Margin="40,30">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Command="{Binding NavigateBackCommand}" 
+                        Style="{StaticResource MaterialDesignFlatButton}" 
+                        Width="45" Height="45" Margin="0,0,20,0">
+                    <materialDesign:PackIcon Kind="ArrowLeft" Width="28" Height="28"/>
+                </Button>
+                <TextBlock Text="Recorded Media" FontSize="30" FontWeight="ExtraBold" VerticalAlignment="Center" Foreground="#1A202C"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Patient Info Summary -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="65,0,0,25">
+            <TextBlock Text="Patient: " Foreground="#718096" FontSize="16"/>
+            <TextBlock Text="{Binding Patient.Name}" Foreground="#2D3748" FontWeight="Bold" FontSize="16" Margin="5,0,0,0"/>
+            <TextBlock Text="{Binding Patient.Id, StringFormat=' ({0})'}" Foreground="#718096" FontSize="16"/>
+        </StackPanel>
+
+        <!-- Content Card -->
+        <materialDesign:Card Grid.Row="2" Background="White">
+            <TabControl materialDesign:ColorZoneAssist.Mode="Standard"
+                        materialDesign:NavigationRailAssist.ShowSelectionBackground="True"
+                        BorderThickness="0"
+                        SelectedIndex="{Binding SelectedTabIndex}">
+                <TabControl.Resources>
+                    <Style TargetType="TabItem" BasedOn="{StaticResource MaterialDesignTabItem}">
+                        <Setter Property="FontSize" Value="16"/>
+                        <Setter Property="FontWeight" Value="Bold"/>
+                        <Setter Property="Height" Value="60"/>
+                        <Setter Property="Width" Value="462"/> <!-- Half of card width roughly -->
+                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                    </Style>
+                </TabControl.Resources>
+                        
+                        <TabItem>
+                            <TabItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Videos ("/>
+                                    <TextBlock Text="{Binding Videos.Count}"/>
+                                    <TextBlock Text=")"/>
+                                </StackPanel>
+                            </TabItem.Header>
+                            <ScrollViewer Margin="20" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Videos}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <materialDesign:Card Width="350" Margin="15">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="200"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <!-- Video Thumbnail Placeholder -->
+                                                    <Grid Grid.Row="0" Background="Black">
+                                                        <materialDesign:PackIcon Kind="PlayCircleOutline" Width="60" Height="60" Foreground="White" Opacity="0.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Grid>
+
+                                                    <TextBlock Grid.Row="1" Text="{Binding Timestamp, StringFormat='MM/dd/yyyy, hh:mm:ss tt'}" Margin="15,15,15,10" Foreground="#718096" FontSize="14"/>
+
+                                                    <Grid Grid.Row="2" Margin="15,0,15,15">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Command="{Binding DataContext.DownloadMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="#2B6CB0" Foreground="White" Height="40" materialDesign:ButtonAssist.CornerRadius="8">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <materialDesign:PackIcon Kind="Download" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="Download" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button Grid.Column="1" Command="{Binding DataContext.DeleteMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="10,0,0,0" Width="40" Height="40" Background="#E53E3E" BorderBrush="Transparent" materialDesign:ButtonAssist.CornerRadius="8">
+                                                            <materialDesign:PackIcon Kind="TrashCanOutline" Foreground="White"/>
+                                                        </Button>
+                                                    </Grid>
+                                                </Grid>
+                                            </materialDesign:Card>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </TabItem>
+
+                        <TabItem>
+                            <TabItem.Header>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Snapshots ("/>
+                                    <TextBlock Text="{Binding Snapshots.Count}"/>
+                                    <TextBlock Text=")"/>
+                                </StackPanel>
+                            </TabItem.Header>
+                            <ScrollViewer Margin="20" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Snapshots}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <materialDesign:Card Width="350" Margin="15">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="200"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <!-- Image Thumbnail Placeholder -->
+                                                    <Grid Grid.Row="0" Background="#F8FAFC">
+                                                        <materialDesign:PackIcon Kind="ImageOutline" Width="60" Height="60" Foreground="#CBD5E0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Grid>
+
+                                                    <TextBlock Grid.Row="1" Text="{Binding Timestamp, StringFormat='MM/dd/yyyy, hh:mm:ss tt'}" Margin="15,15,15,10" Foreground="#718096" FontSize="14"/>
+
+                                                    <Grid Grid.Row="2" Margin="15,0,15,15">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Button Grid.Column="0" Command="{Binding DataContext.DownloadMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="#2B6CB0" Foreground="White" Height="40" materialDesign:ButtonAssist.CornerRadius="8">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <materialDesign:PackIcon Kind="Download" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="Download" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button Grid.Column="1" Command="{Binding DataContext.DeleteMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="10,0,0,0" Width="40" Height="40" Background="#E53E3E" BorderBrush="Transparent" materialDesign:ButtonAssist.CornerRadius="8">
+                                                            <materialDesign:PackIcon Kind="TrashCanOutline" Foreground="White"/>
+                                                        </Button>
+                                                    </Grid>
+                                                </Grid>
+                                            </materialDesign:Card>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </TabItem>
+                    </TabControl>
+        </materialDesign:Card>
+    </Grid>
+</UserControl>

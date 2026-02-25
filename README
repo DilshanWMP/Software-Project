@@ -1,0 +1,41 @@
+Endoscopy App - Walkthrough
+The application has been successfully migrated to .NET 9 WPF.
+
+How to Run
+
+1. Open terminal in d:\5th sem\Software group project\Software-Project\EndoscopyApp.
+2. Run dotnet run.
+
+Features Verification
+
+1. Login
+• Scenario: App launch .
+• Action: Enter admin123 and click Login.
+• Expected: Navigate to Live View. Sidebar appears.
+
+2. Live View
+• Scenario: Real-time camera feed.
+• Action: Click "Start Camera".
+• Expected: If a camera is connected, you should see the feed. If not, check device index in 
+VideoCaptureService
+.
+
+3. Record View
+• Scenario: Register patient and capture media.
+• Action:
+    1. Navigate to "Record" (Red Icon).
+    2. Enter Patient Name (e.g., "John Doe"), Age, Gender.
+    3. Click "Start Session". (Camera starts).
+    4. Click "Snapshot" -> Verification: Check bin\Debug\net9.0-windows\Media\{id} for images.
+    5. Click "Record" -> Wait -> Click "Stop" -> Verification: Check folder for .avi file.
+
+4. Gallery View
+• Scenario: View saved data.
+• Action: Navigate to "Gallery".
+• Expected: List of patients on left. Click a patient to see the grid of media files. Clicking "OPEN" on a file opens it in default viewer.
+
+Troubleshooting
+• Camera Error: If camera fails to open, ensure no other app is using it. You may need to change deviceIndex in 
+VideoCaptureService.cs
+ (default is 0).
+• Video Recording: Uses MJPG codec in .avi. Ensure your media player supports it.
