@@ -26,7 +26,7 @@ namespace EndoscopyApp.ViewModels
         [RelayCommand]
         private void NavigateToRecordedVideos()
         {
-            _mainViewModel.NavigateToGallery();
+            _mainViewModel.NavigateToRecordedVideos();
         }
 
         [RelayCommand]

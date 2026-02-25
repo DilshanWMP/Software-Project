@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using EndoscopyApp.Models;
 using System.Windows;
 using EndoscopyApp.Services;
 
@@ -45,11 +46,30 @@ namespace EndoscopyApp.ViewModels
             }
         }
 
+        [RelayCommand]
+        public void NavigateToRecordedVideos()
+        {
+            if (CurrentViewModel is not RecordedVideosViewModel)
+            {
+                if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+                NavigateTo(new RecordedVideosViewModel(this));
+                PageTitle = "Recorded Videos";
+            }
+        }
+
+        public void NavigateToPatientMedia(Patient patient)
+        {
+            if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+            NavigateTo(new PatientMediaViewModel(this, patient));
+            PageTitle = "Recorded Media";
+        }
+
         public void NavigateTo(ViewModelBase viewModel)
         {
              CurrentViewModel = viewModel;
-              // Show sidebar if we are not on Login, Home or Patients page
-              if (viewModel is LoginViewModel || viewModel is HomeViewModel || viewModel is PatientsViewModel)
+              // Show sidebar if we are not on Login, Home, Patients, RecordedVideos or PatientMedia page
+              if (viewModel is LoginViewModel || viewModel is HomeViewModel || viewModel is PatientsViewModel || 
+                  viewModel is RecordedVideosViewModel || viewModel is PatientMediaViewModel)
               {
                   SidebarVisibility = Visibility.Collapsed;
               }
