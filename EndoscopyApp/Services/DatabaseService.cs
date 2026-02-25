@@ -101,6 +101,43 @@ namespace EndoscopyApp.Services
             return patients;
         }
 
+        public void UpdatePatient(Patient patient)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            connection.Open();
+            var command = connection.CreateCommand();
+            command.CommandText = @"
+                UPDATE Patients 
+                SET Name = $name, Age = $age, Gender = $gender, Phone = $phone, Notes = $notes
+                WHERE Id = $id;
+            ";
+            command.Parameters.AddWithValue("$name", patient.Name);
+            command.Parameters.AddWithValue("$age", patient.Age);
+            command.Parameters.AddWithValue("$gender", patient.Gender);
+            command.Parameters.AddWithValue("$phone", patient.Phone);
+            command.Parameters.AddWithValue("$notes", (object?)patient.Notes ?? DBNull.Value);
+            command.Parameters.AddWithValue("$id", patient.Id);
+
+            command.ExecuteNonQuery();
+        }
+
+        public void DeletePatient(int patientId)
+        {
+            using var connection = new SqliteConnection(_connectionString);
+            connection.Open();
+            
+            // Delete associated media files first
+            var deleteMediaCommand = connection.CreateCommand();
+            deleteMediaCommand.CommandText = "DELETE FROM MediaFiles WHERE PatientId = $patientId";
+            deleteMediaCommand.Parameters.AddWithValue("$patientId", patientId);
+            deleteMediaCommand.ExecuteNonQuery();
+
+            var command = connection.CreateCommand();
+            command.CommandText = "DELETE FROM Patients WHERE Id = $id";
+            command.Parameters.AddWithValue("$id", patientId);
+            command.ExecuteNonQuery();
+        }
+
         // Add more methods as needed for MediaFiles
     }
 }

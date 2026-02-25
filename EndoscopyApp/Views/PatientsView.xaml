@@ -177,7 +177,7 @@
                     </Grid.RowDefinitions>
 
                     <Grid Grid.Row="0" Margin="0,0,0,20">
-                        <TextBlock Text="Add New Patient" FontSize="20" FontWeight="Bold" Foreground="#1A202C"/>
+                        <TextBlock Text="{Binding ModalTitle}" FontSize="20" FontWeight="Bold" Foreground="#1A202C"/>
                         <Button HorizontalAlignment="Right" Command="{Binding CloseAddModalCommand}" Style="{StaticResource MaterialDesignFlatButton}" Width="30" Height="30" Padding="0">
                             <materialDesign:PackIcon Kind="Close"/>
                         </Button>
@@ -199,7 +199,7 @@
                         <!-- Row 1 -->
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,15">
                             <TextBlock Text="Patient ID *" Foreground="#4A5568" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
-                            <TextBox Text="{Binding NewPatientId}" materialDesign:TextFieldAssist.TextFieldCornerRadius="8" Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+                            <TextBox Text="{Binding NewPatientId}" IsReadOnly="True" materialDesign:TextFieldAssist.TextFieldCornerRadius="8" Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,15">
                             <TextBlock Text="Full Name *" Foreground="#4A5568" Margin="0,0,0,5" FontSize="14" FontWeight="SemiBold"/>
@@ -235,7 +235,7 @@
                             <ColumnDefinition Width="15"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0" Content="Add Patient" Command="{Binding AddPatientCommand}" Background="#2B6CB0" Foreground="White" Height="48" materialDesign:ButtonAssist.CornerRadius="8" FontSize="16" FontWeight="Bold"/>
+                        <Button Grid.Column="0" Content="{Binding ModalButtonText}" Command="{Binding AddPatientCommand}" Background="#2B6CB0" Foreground="White" Height="48" materialDesign:ButtonAssist.CornerRadius="8" FontSize="16" FontWeight="Bold"/>
                         <Button Grid.Column="2" Content="Cancel" Command="{Binding CloseAddModalCommand}" Style="{StaticResource MaterialDesignFlatButton}" Background="#EDF2F7" Foreground="#4A5568" Height="48" materialDesign:ButtonAssist.CornerRadius="8" FontSize="16" FontWeight="SemiBold"/>
                     </Grid>
                 </Grid>
