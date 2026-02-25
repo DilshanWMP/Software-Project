@@ -26,7 +26,9 @@
         </StackPanel>
 
         <!-- Main Content -->
-        <materialDesign:Card Grid.Row="1" Background="White" UniformCornerRadius="16" materialDesign:ElevationAssist.Elevation="Dp3" Padding="40" VerticalAlignment="Top" HorizontalAlignment="Stretch">
+        <!-- Wrap the main content in a ScrollViewer so it's always scrollable on small screens -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <materialDesign:Card Background="White" UniformCornerRadius="16" materialDesign:ElevationAssist.Elevation="Dp3" Padding="40" Margin="5" VerticalAlignment="Top" HorizontalAlignment="Stretch">
             <StackPanel>
                 
                 <!-- System Settings Section Header -->
@@ -61,13 +63,83 @@
                 <!-- Security Section Header -->
                 <TextBlock Text="Security Configuration" FontSize="18" FontWeight="SemiBold" Foreground="#4A5568" Margin="0,0,0,20"/>
 
-                <!-- Admin Password -->
-                <TextBlock Text="Administrator Password" FontSize="14" FontWeight="Medium" Foreground="#718096" Margin="0,0,0,5"/>
+                <!-- Password Update -->
+                <TextBlock Text="Change Administrator Password (Optional)" FontSize="14" FontWeight="Medium" Foreground="#718096" Margin="0,0,0,5"/>
                 <Grid Margin="0,0,0,30">
-                    <TextBox Text="{Binding AdminPassword, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                             materialDesign:HintAssist.Hint="Set a new admin password"
-                             Padding="15" Height="50"/>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Current Password -->
+                    <Grid Grid.Row="0" Margin="0,0,0,15">
+                        <PasswordBox x:Name="CurrentPasswordBox" 
+                                     materialDesign:HintAssist.Hint="Current Password"
+                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                     PasswordChanged="CurrentPasswordBox_PasswordChanged"
+                                     Padding="15,5" Height="50"
+                                     Visibility="{Binding IsCurrentPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                                     
+                        <TextBox Text="{Binding CurrentPassword, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Current Password"
+                                 Padding="15,5" Height="50"
+                                 Visibility="{Binding IsCurrentPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                 
+                        <Button Command="{Binding ToggleCurrentPasswordVisibilityCommand}" 
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Style="{StaticResource MaterialDesignFlatButton}" 
+                                Padding="0" Width="30" Height="30" Margin="0,0,10,0">
+                            <materialDesign:PackIcon Kind="{Binding IsCurrentPasswordVisible, Converter={StaticResource BooleanToEyeIconConverter}}" Opacity="0.6"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- New Password -->
+                    <Grid Grid.Row="1" Margin="0,0,0,15">
+                        <PasswordBox x:Name="NewPasswordBox" 
+                                     materialDesign:HintAssist.Hint="New Password"
+                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                     PasswordChanged="NewPasswordBox_PasswordChanged"
+                                     Padding="15,5" Height="50"
+                                     Visibility="{Binding IsNewPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                                     
+                        <TextBox Text="{Binding NewPassword, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="New Password"
+                                 Padding="15,5" Height="50"
+                                 Visibility="{Binding IsNewPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                 
+                        <Button Command="{Binding ToggleNewPasswordVisibilityCommand}" 
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Style="{StaticResource MaterialDesignFlatButton}" 
+                                Padding="0" Width="30" Height="30" Margin="0,0,10,0">
+                            <materialDesign:PackIcon Kind="{Binding IsNewPasswordVisible, Converter={StaticResource BooleanToEyeIconConverter}}" Opacity="0.6"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Confirm Password -->
+                    <Grid Grid.Row="2">
+                        <PasswordBox x:Name="ConfirmPasswordBox" 
+                                     materialDesign:HintAssist.Hint="Confirm New Password"
+                                     Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
+                                     PasswordChanged="ConfirmPasswordBox_PasswordChanged"
+                                     Padding="15,5" Height="50"
+                                     Visibility="{Binding IsConfirmPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                                     
+                        <TextBox Text="{Binding ConfirmPassword, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                 materialDesign:HintAssist.Hint="Confirm New Password"
+                                 Padding="15,5" Height="50"
+                                 Visibility="{Binding IsConfirmPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                 
+                        <Button Command="{Binding ToggleConfirmPasswordVisibilityCommand}" 
+                                HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Style="{StaticResource MaterialDesignFlatButton}" 
+                                Padding="0" Width="30" Height="30" Margin="0,0,10,0">
+                            <materialDesign:PackIcon Kind="{Binding IsConfirmPasswordVisible, Converter={StaticResource BooleanToEyeIconConverter}}" Opacity="0.6"/>
+                        </Button>
+                    </Grid>
                 </Grid>
 
                 <!-- Actions -->
@@ -93,5 +165,6 @@
 
             </StackPanel>
         </materialDesign:Card>
+        </ScrollViewer>
     </Grid>
 </UserControl>
