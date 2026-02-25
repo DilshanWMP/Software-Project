@@ -14,6 +14,7 @@ namespace EndoscopyApp.ViewModels
     {
         private readonly VideoCaptureService _videoService;
         private readonly DatabaseService _dbService;
+        private readonly MainViewModel? _mainViewModel;
         private Patient? _currentPatient;
 
         [ObservableProperty]
@@ -35,7 +36,13 @@ namespace EndoscopyApp.ViewModels
         private bool _isRecording;
 
         [ObservableProperty]
+        private string _patientId = "000000";
+
+        [ObservableProperty]
         private bool _isPatientRegistered;
+
+        [ObservableProperty]
+        private bool _isFullscreen;
 
         public ObservableCollection<string> GenderOptions { get; } = new ObservableCollection<string> { "Male", "Female", "Other" };
 
@@ -46,12 +53,31 @@ namespace EndoscopyApp.ViewModels
             _dbService = new DatabaseService();
         }
 
+        public RecordViewModel(MainViewModel mainViewModel) : this()
+        {
+            _mainViewModel = mainViewModel;
+
+            // Automatically start camera when navigating to this view
+            StartCamera();
+        }
+
+        public void SetPatient(Patient patient)
+        {
+            _currentPatient = patient;
+            PatientName = patient.Name;
+            PatientAge = patient.Age.ToString();
+            PatientGender = patient.Gender;
+            PatientPhone = patient.Phone;
+            PatientId = patient.Id.ToString("D6");
+            IsPatientRegistered = true;
+        }
+
         private void OnFrameReady(object? sender, WriteableBitmap bitmap)
         {
-             System.Windows.Application.Current.Dispatcher.Invoke(() =>
-            {
-                CurrentFrame = bitmap;
-            });
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+           {
+               CurrentFrame = bitmap;
+           });
         }
 
         [RelayCommand]
@@ -65,8 +91,8 @@ namespace EndoscopyApp.ViewModels
 
             if (!int.TryParse(PatientAge, out int age))
             {
-                 MessageBox.Show("Invalid Age.");
-                 return;
+                MessageBox.Show("Invalid Age.");
+                return;
             }
 
             _currentPatient = new Patient
@@ -83,7 +109,7 @@ namespace EndoscopyApp.ViewModels
             {
                 _dbService.AddPatient(_currentPatient);
                 IsPatientRegistered = true;
-                
+
                 // Start Camera automatically
                 StartCamera();
             }
@@ -117,49 +143,86 @@ namespace EndoscopyApp.ViewModels
         [RelayCommand]
         public void ToggleRecording()
         {
-             if (!_isCameraRunning || _currentPatient == null) return;
+            if (!IsCameraRunning) return;
 
-             if (IsRecording)
-             {
-                 _videoService.StopRecording();
-                 IsRecording = false;
-                 MessageBox.Show("Recording Saved.");
-             }
-             else
-             {
-                 // Create directory for patient
-                 string patientDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", _currentPatient.Id.ToString());
-                 Directory.CreateDirectory(patientDir);
-                 string fileName = $"REC_{DateTime.Now:yyyyMMdd_HHmmss}.avi";
-                 string filePath = Path.Combine(patientDir, fileName);
+            // Check if patient is available for recording/snapshots, but allow viewing without one
+            if (_currentPatient == null)
+            {
+                MessageBox.Show("Please register or select a patient first.");
+                return;
+            }
 
-                 _videoService.StartRecording(filePath);
-                 IsRecording = true;
+            if (IsRecording)
+            {
+                _videoService.StopRecording();
+                IsRecording = false;
+                MessageBox.Show("Recording Saved.");
+            }
+            else
+            {
+                // Create directory for patient
+                string patientDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", _currentPatient.Id.ToString());
+                Directory.CreateDirectory(patientDir);
+                string fileName = $"REC_{DateTime.Now:yyyyMMdd_HHmmss}.avi";
+                string filePath = Path.Combine(patientDir, fileName);
 
-                 // Save metadata to DB (Placeholder implementation as DB service AddMedia not shown in previous step fully)
-                 // media = new MediaFile { PatientId = _currentPatient.Id, FilePath = filePath, FileType = "Video" }
-                 // _dbService.AddMedia(media);
-             }
+                _videoService.StartRecording(filePath);
+                IsRecording = true;
+
+                // Save metadata to DB (Placeholder implementation as DB service AddMedia not shown in previous step fully)
+                // media = new MediaFile { PatientId = _currentPatient.Id, FilePath = filePath, FileType = "Video" }
+                // _dbService.AddMedia(media);
+            }
+        }
+
+        [RelayCommand]
+        public void CancelRecording()
+        {
+            if (IsRecording)
+            {
+                _videoService.StopRecording();
+                IsRecording = false;
+                // In a real app, we might delete the temporary file here
+                MessageBox.Show("Recording Cancelled.");
+            }
+        }
+
+        [RelayCommand]
+        public void ToggleFullscreen()
+        {
+            IsFullscreen = !IsFullscreen;
+        }
+
+        [RelayCommand]
+        public void NavigateBack()
+        {
+            _mainViewModel?.NavigateToHome();
         }
 
         [RelayCommand]
         public void TakeSnapshot()
         {
-            if (!_isCameraRunning || _currentPatient == null) return;
+            if (!IsCameraRunning) return;
 
-             var frame = _videoService.CaptureSnapshot();
-             if (!frame.Empty())
-             {
-                 string patientDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", _currentPatient.Id.ToString());
-                 Directory.CreateDirectory(patientDir);
-                 string fileName = $"IMG_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
-                 string filePath = Path.Combine(patientDir, fileName);
+            if (_currentPatient == null)
+            {
+                MessageBox.Show("Please register or select a patient first.");
+                return;
+            }
 
-                 frame.SaveImage(filePath);
-                 MessageBox.Show("Snapshot Saved.");
-                 
-                 // Save metadata to DB
-             }
+            var frame = _videoService.CaptureSnapshot();
+            if (!frame.Empty())
+            {
+                string patientDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", _currentPatient.Id.ToString());
+                Directory.CreateDirectory(patientDir);
+                string fileName = $"IMG_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+                string filePath = Path.Combine(patientDir, fileName);
+
+                frame.SaveImage(filePath);
+                MessageBox.Show("Snapshot Saved.");
+
+                // Save metadata to DB
+            }
         }
 
         public void Cleanup()

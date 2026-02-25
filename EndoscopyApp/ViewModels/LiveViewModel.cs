@@ -9,7 +9,8 @@ namespace EndoscopyApp.ViewModels
     public partial class LiveViewModel : ViewModelBase
     {
         private readonly VideoCaptureService _videoService;
-        
+        private readonly MainViewModel? _mainViewModel;
+
         [ObservableProperty]
         private WriteableBitmap? _currentFrame;
 
@@ -20,6 +21,11 @@ namespace EndoscopyApp.ViewModels
         {
             _videoService = new VideoCaptureService();
             _videoService.FrameReady += OnFrameReady;
+        }
+
+        public LiveViewModel(MainViewModel mainViewModel) : this()
+        {
+            _mainViewModel = mainViewModel;
         }
 
         private void OnFrameReady(object? sender, WriteableBitmap bitmap)
@@ -41,7 +47,7 @@ namespace EndoscopyApp.ViewModels
             }
             catch (System.Exception ex)
             {
-               // Handle error
+                // Handle error
             }
         }
 
@@ -50,6 +56,12 @@ namespace EndoscopyApp.ViewModels
         {
             _videoService.Stop();
             IsCameraRunning = false;
+        }
+
+        [RelayCommand]
+        public void NavigateBack()
+        {
+            _mainViewModel?.NavigateToHome();
         }
 
         // Cleanup when navigating away or closing

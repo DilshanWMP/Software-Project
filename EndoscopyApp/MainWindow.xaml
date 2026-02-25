@@ -32,6 +32,9 @@
         <DataTemplate DataType="{x:Type viewmodels:RecordViewModel}">
             <views:RecordView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:SelectPatientViewModel}">
+            <views:SelectPatientView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels:GalleryViewModel}">
             <views:GalleryView/>
         </DataTemplate>

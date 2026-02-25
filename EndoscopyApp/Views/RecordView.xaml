@@ -7,53 +7,126 @@
              xmlns:viewmodels="clr-namespace:EndoscopyApp.ViewModels"
              mc:Ignorable="d" 
              d:DesignHeight="768" d:DesignWidth="1024">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+    <Grid Background="#0F172A">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-        <!-- Left Panel: Patient Details -->
-        <Border Grid.Column="0" Background="{DynamicResource MaterialDesignPaper}" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,1,0">
-            <StackPanel Margin="16">
-                <TextBlock Text="Patient Details" Style="{StaticResource MaterialDesignHeadline6TextBlock}" Margin="0,0,0,16"/>
-                
-                <TextBox Text="{Binding PatientName}" materialDesign:HintAssist.Hint="Full Name" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,16" IsEnabled="{Binding IsPatientRegistered, Converter={StaticResource InverseBooleanConverter}}"/>
-                <TextBox Text="{Binding PatientAge}" materialDesign:HintAssist.Hint="Age" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,16" IsEnabled="{Binding IsPatientRegistered, Converter={StaticResource InverseBooleanConverter}}"/>
-                
-                <ComboBox ItemsSource="{Binding GenderOptions}" SelectedItem="{Binding PatientGender}" materialDesign:HintAssist.Hint="Gender" Style="{StaticResource MaterialDesignFloatingHintComboBox}" Margin="0,0,0,16" IsEnabled="{Binding IsPatientRegistered, Converter={StaticResource InverseBooleanConverter}}"/>
-                
-                <TextBox Text="{Binding PatientPhone}" materialDesign:HintAssist.Hint="Phone Number" Style="{StaticResource MaterialDesignFloatingHintTextBox}" Margin="0,0,0,24" IsEnabled="{Binding IsPatientRegistered, Converter={StaticResource InverseBooleanConverter}}"/>
-
-                <Button Command="{Binding StartSessionCommand}" Content="START SESSION" Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,0,16" IsEnabled="{Binding IsPatientRegistered, Converter={StaticResource InverseBooleanConverter}}"/>
-                
-                <Separator Margin="0,16"/>
-                
-                <TextBlock Text="Controls" Style="{StaticResource MaterialDesignSubtitle1TextBlock}" Margin="0,0,0,16"/>
-                
-                <Button Command="{Binding TakeSnapshotCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,0,16" IsEnabled="{Binding IsCameraRunning}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Camera" Margin="0,0,8,0"/>
-                        <TextBlock Text="Snapshot"/>
+        <!-- Header -->
+        <materialDesign:ColorZone Mode="Standard" Background="White" Padding="16" Grid.Row="0"
+                                  Visibility="{Binding IsFullscreen, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+            <Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding NavigateBackCommand}" 
+                            Style="{StaticResource MaterialDesignFlatButton}" 
+                            Width="40" Height="40" Margin="0,0,16,0">
+                        <materialDesign:PackIcon Kind="ArrowLeft" Width="24" Height="24" Foreground="Black"/>
+                    </Button>
+                    <StackPanel>
+                        <TextBlock Text="Live Recording" FontSize="24" FontWeight="Bold" Foreground="Black"/>
+                        <StackPanel Orientation="Horizontal" Visibility="{Binding IsPatientRegistered, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="Patient: " Foreground="#718096" FontSize="14"/>
+                            <TextBlock Text="{Binding PatientName}" Foreground="#2D3748" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text="  (" Foreground="#718096" FontSize="14"/>
+                            <TextBlock Text="{Binding PatientId}" Foreground="#2D3748" FontSize="14" FontWeight="SemiBold"/>
+                            <TextBlock Text=")" Foreground="#718096" FontSize="14"/>
+                        </StackPanel>
                     </StackPanel>
-                </Button>
+                </StackPanel>
 
-                <Button Command="{Binding ToggleRecordingCommand}" Style="{StaticResource MaterialDesignRaisedAccentButton}" IsEnabled="{Binding IsCameraRunning}">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="Record" Margin="0,0,8,0"/>
-                        <TextBlock Text="{Binding IsRecording, Converter={StaticResource BooleanToStringConverter}, ConverterParameter=Stop Recording|Start Recording}"/> 
-                    </StackPanel>
-                </Button>
-            </StackPanel>
+                <!-- Recording Status -->
+                <materialDesign:Chip HorizontalAlignment="Right" Background="#E53E3E" Foreground="White" 
+                                    Visibility="{Binding IsRecording, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Content="Recording" VerticalAlignment="Center">
+                    <materialDesign:Chip.Icon>
+                        <Ellipse Width="10" Height="10" Fill="White" Margin="4"/>
+                    </materialDesign:Chip.Icon>
+                </materialDesign:Chip>
+            </Grid>
+        </materialDesign:ColorZone>
+
+
+        <!-- Bottom Bar -->
+        <Border Grid.Row="2" Padding="20" Background="#0F172A"
+                Visibility="{Binding IsFullscreen, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+             <Grid>
+                <!-- Initial State: Snapshot & Record -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" 
+                            Visibility="{Binding IsRecording, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                    <Button Command="{Binding TakeSnapshotCommand}" 
+                            Background="#4C51BF" Foreground="White" Width="220" Height="50"
+                            materialDesign:ButtonAssist.CornerRadius="10" Margin="0,0,20,0"
+                            IsEnabled="{Binding IsCameraRunning}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CameraOutline" Width="22" Height="22" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Snapshot" VerticalAlignment="Center" FontSize="16" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ToggleRecordingCommand}" 
+                            Background="#E53E3E" Foreground="White" Width="220" Height="50"
+                            materialDesign:ButtonAssist.CornerRadius="10"
+                            IsEnabled="{Binding IsCameraRunning}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="RecordCircleOutline" Width="22" Height="22" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Record" VerticalAlignment="Center" FontSize="16" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Recording State: Stop & Save & Cancel -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" 
+                            Visibility="{Binding IsRecording, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Command="{Binding ToggleRecordingCommand}" 
+                            Background="#38A169" Foreground="White" Width="220" Height="50"
+                            materialDesign:ButtonAssist.CornerRadius="10" Margin="0,0,20,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="RecordCircle" Width="22" Height="22" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Stop &amp; Save" VerticalAlignment="Center" FontSize="16" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding CancelRecordingCommand}" 
+                            Background="#E53E3E" Foreground="White" Width="220" Height="50"
+                            materialDesign:ButtonAssist.CornerRadius="10">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Close" Width="22" Height="22" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Cancel" VerticalAlignment="Center" FontSize="16" FontWeight="Bold"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <!-- Right Panel: Camera Feed -->
-        <Grid Grid.Column="1" Background="Black">
-            <Image Source="{Binding CurrentFrame}" Stretch="Uniform"/>
-            
-            <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Margin="16" Orientation="Horizontal">
-                 <materialDesign:Chip Content="REC" Background="Red" Foreground="White" Visibility="{Binding IsRecording, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            </StackPanel>
-        </Grid>
+        <!-- Video Area -->
+        <Border Background="Black" Panel.ZIndex="1">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Grid.Row" Value="1"/>
+                    <Setter Property="Grid.RowSpan" Value="1"/>
+                    <Setter Property="Margin" Value="20"/>
+                    <Setter Property="CornerRadius" Value="8"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsFullscreen}" Value="True">
+                            <Setter Property="Grid.Row" Value="0"/>
+                            <Setter Property="Grid.RowSpan" Value="3"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="CornerRadius" Value="0"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Grid>
+                <Image Source="{Binding CurrentFrame}" Stretch="Uniform"/>
+                <Button Command="{Binding ToggleFullscreenCommand}"
+                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                        HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                        Width="40" Height="40" Margin="16"
+                        Background="#66000000" BorderBrush="Transparent">
+                    <materialDesign:PackIcon Kind="{Binding IsFullscreen, Converter={StaticResource FullscreenIconConverter}}" 
+                                            Width="24" Height="24" Foreground="White"/>
+                </Button>
+            </Grid>
+        </Border>
     </Grid>
 </UserControl>
