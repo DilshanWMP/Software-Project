@@ -43,6 +43,17 @@ namespace EndoscopyApp.Services
                 );
             ";
             command.ExecuteNonQuery();
+
+            // Migration: Add Notes column if it doesn't exist
+            try
+            {
+                command.CommandText = "ALTER TABLE Patients ADD COLUMN Notes TEXT;";
+                command.ExecuteNonQuery();
+            }
+            catch (SqliteException ex) when (ex.SqliteErrorCode == 1) // 1 is usually "duplicate column name"
+            {
+                // Column already exists, ignore
+            }
         }
 
         public void AddPatient(Patient patient)
@@ -51,14 +62,15 @@ namespace EndoscopyApp.Services
             connection.Open();
             var command = connection.CreateCommand();
             command.CommandText = @"
-                INSERT INTO Patients (Name, Age, Gender, Phone, CreatedAt)
-                VALUES ($name, $age, $gender, $phone, $createdAt);
+                INSERT INTO Patients (Name, Age, Gender, Phone, Notes, CreatedAt)
+                VALUES ($name, $age, $gender, $phone, $notes, $createdAt);
                 SELECT last_insert_rowid();
             ";
             command.Parameters.AddWithValue("$name", patient.Name);
             command.Parameters.AddWithValue("$age", patient.Age);
             command.Parameters.AddWithValue("$gender", patient.Gender);
             command.Parameters.AddWithValue("$phone", patient.Phone);
+            command.Parameters.AddWithValue("$notes", (object?)patient.Notes ?? DBNull.Value);
             command.Parameters.AddWithValue("$createdAt", patient.CreatedAt.ToString("o"));
 
             patient.Id = Convert.ToInt32(command.ExecuteScalar());
@@ -70,7 +82,7 @@ namespace EndoscopyApp.Services
             using var connection = new SqliteConnection(_connectionString);
             connection.Open();
             var command = connection.CreateCommand();
-            command.CommandText = "SELECT Id, Name, Age, Gender, Phone, CreatedAt FROM Patients ORDER BY CreatedAt DESC";
+            command.CommandText = "SELECT Id, Name, Age, Gender, Phone, Notes, CreatedAt FROM Patients ORDER BY CreatedAt DESC";
             
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -82,7 +94,8 @@ namespace EndoscopyApp.Services
                     Age = reader.IsDBNull(2) ? 0 : reader.GetInt32(2),
                     Gender = reader.IsDBNull(3) ? "" : reader.GetString(3),
                     Phone = reader.IsDBNull(4) ? "" : reader.GetString(4),
-                    CreatedAt = DateTime.Parse(reader.GetString(5))
+                    Notes = reader.IsDBNull(5) ? "" : reader.GetString(5),
+                    CreatedAt = DateTime.Parse(reader.GetString(6))
                 });
             }
             return patients;

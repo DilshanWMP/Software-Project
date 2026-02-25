@@ -14,6 +14,24 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private ObservableCollection<Patient> _patients;
 
+        [ObservableProperty]
+        private bool _isAddModalOpen;
+
+        [ObservableProperty]
+        private string _newPatientId = "";
+        [ObservableProperty]
+        private string _newPatientName = "";
+        [ObservableProperty]
+        private string _newPatientAge = "";
+        [ObservableProperty]
+        private string _newPatientGender = "Male";
+        [ObservableProperty]
+        private string _newPatientPhone = "";
+        [ObservableProperty]
+        private string _newPatientNotes = "";
+
+        public ObservableCollection<string> GenderOptions { get; } = new() { "Male", "Female", "Other" };
+
         public PatientsViewModel(MainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
@@ -28,9 +46,44 @@ namespace EndoscopyApp.ViewModels
         }
 
         [RelayCommand]
+        private void OpenAddModal()
+        {
+            IsAddModalOpen = true;
+            // Clear fields when opening
+            NewPatientId = "";
+            NewPatientName = "";
+            NewPatientAge = "";
+            NewPatientGender = "Male";
+            NewPatientPhone = "";
+            NewPatientNotes = "";
+        }
+
+        [RelayCommand]
+        private void CloseAddModal()
+        {
+            IsAddModalOpen = false;
+        }
+
+        [RelayCommand]
         private void AddPatient()
         {
-            _mainViewModel.NavigateToRecord();
+            if (string.IsNullOrWhiteSpace(NewPatientName)) return;
+
+            int.TryParse(NewPatientAge, out int age);
+
+            var patient = new Patient
+            {
+                Name = NewPatientName,
+                Age = age,
+                Gender = NewPatientGender,
+                Phone = NewPatientPhone,
+                Notes = NewPatientNotes,
+                CreatedAt = System.DateTime.Now
+            };
+
+            _dbService.AddPatient(patient);
+            Patients.Add(patient);
+            IsAddModalOpen = false;
         }
 
         [RelayCommand]
