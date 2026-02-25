@@ -9,7 +9,7 @@ How to Run
 Features Verification
 
 1. Login
-• Scenario: App launch.
+• Scenario: App launch .
 • Action: Enter admin123 and click Login.
 • Expected: Navigate to Live View. Sidebar appears.
 

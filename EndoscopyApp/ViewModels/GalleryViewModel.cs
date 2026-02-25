@@ -51,7 +51,9 @@ namespace EndoscopyApp.ViewModels
         private void LoadMedia(Patient patient)
         {
             MediaFiles.Clear();
-            string patientDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", patient.Id.ToString());
+            var settingsService = new SettingsService();
+            var settings = settingsService.LoadSettings();
+            string patientDir = Path.Combine(settings.MediaPath, patient.Id.ToString());
             
             if (Directory.Exists(patientDir))
             {

@@ -32,8 +32,20 @@
         <DataTemplate DataType="{x:Type viewmodels:RecordViewModel}">
             <views:RecordView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:SelectPatientViewModel}">
+            <views:SelectPatientView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels:GalleryViewModel}">
             <views:GalleryView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:SettingsViewModel}">
+            <views:SettingsView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:RecordedVideosViewModel}">
+            <views:RecordedVideosView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:PatientMediaViewModel}">
+            <views:PatientMediaView/>
         </DataTemplate>
     </Window.Resources>
 

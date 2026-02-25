@@ -31,8 +31,10 @@ namespace EndoscopyApp.ViewModels
         [RelayCommand]
         private void Login()
         {
-            // Simple hardcoded password for Phase 1 as requested
-            if (Password == "admin123")
+            var settingsService = new EndoscopyApp.Services.SettingsService();
+            var settings = settingsService.LoadSettings();
+
+            if (Password == settings.AdminPassword)
             {
                 ErrorMessage = "";
                 _mainViewModel.NavigateTo(new HomeViewModel(_mainViewModel));
