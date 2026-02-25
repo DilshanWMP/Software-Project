@@ -14,7 +14,22 @@ namespace EndoscopyApp.ViewModels
         private AppSettings _currentSettings;
 
         [ObservableProperty]
-        private string _adminPassword = "";
+        private string _currentPassword = "";
+        
+        [ObservableProperty]
+        private string _newPassword = "";
+        
+        [ObservableProperty]
+        private string _confirmPassword = "";
+
+        [ObservableProperty]
+        private bool _isCurrentPasswordVisible;
+
+        [ObservableProperty]
+        private bool _isNewPasswordVisible;
+
+        [ObservableProperty]
+        private bool _isConfirmPasswordVisible;
 
         [ObservableProperty]
         private string _mediaPath = "";
@@ -26,7 +41,6 @@ namespace EndoscopyApp.ViewModels
             
             // Load current settings
             _currentSettings = _settingsService.LoadSettings();
-            AdminPassword = _currentSettings.AdminPassword;
             MediaPath = _currentSettings.MediaPath;
         }
 
@@ -46,20 +60,53 @@ namespace EndoscopyApp.ViewModels
         }
 
         [RelayCommand]
+        private void ToggleCurrentPasswordVisibility()
+        {
+            IsCurrentPasswordVisible = !IsCurrentPasswordVisible;
+        }
+
+        [RelayCommand]
+        private void ToggleNewPasswordVisibility()
+        {
+            IsNewPasswordVisible = !IsNewPasswordVisible;
+        }
+
+        [RelayCommand]
+        private void ToggleConfirmPasswordVisibility()
+        {
+            IsConfirmPasswordVisible = !IsConfirmPasswordVisible;
+        }
+
+        [RelayCommand]
         private void SaveSettings()
         {
-            if (string.IsNullOrWhiteSpace(AdminPassword))
-            {
-                MessageBox.Show("Password cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
             if (string.IsNullOrWhiteSpace(MediaPath))
             {
                 MessageBox.Show("Media path cannot be empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            _currentSettings.AdminPassword = AdminPassword;
+            bool isPasswordChangeAttempted = !string.IsNullOrWhiteSpace(CurrentPassword) || 
+                                             !string.IsNullOrWhiteSpace(NewPassword) || 
+                                             !string.IsNullOrWhiteSpace(ConfirmPassword);
+
+            if (isPasswordChangeAttempted)
+            {
+                if (CurrentPassword != _currentSettings.AdminPassword)
+                {
+                    MessageBox.Show("Current password is incorrect.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                
+                if (string.IsNullOrWhiteSpace(NewPassword) || NewPassword != ConfirmPassword)
+                {
+                    MessageBox.Show("New passwords do not match or are empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                
+                _currentSettings.AdminPassword = NewPassword;
+            }
+
             _currentSettings.MediaPath = MediaPath;
 
             try
