@@ -15,6 +15,8 @@
             <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
             <local:BooleanToStringConverter x:Key="BooleanToStringConverter" />
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+            <local:BooleanToEyeIconConverter x:Key="BooleanToEyeIconConverter" />
+            <local:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>
