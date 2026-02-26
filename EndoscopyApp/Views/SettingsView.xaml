@@ -57,6 +57,16 @@
                         </StackPanel>
                     </Button>
                 </Grid>
+                
+                <!-- Camera Configuration -->
+                <TextBlock Text="Camera Device Index" FontSize="14" FontWeight="Medium" Foreground="#718096" Margin="0,15,0,5"/>
+                <ComboBox SelectedIndex="{Binding CameraIndex}" 
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          Padding="15" Height="50" Margin="0,0,0,20">
+                    <ComboBoxItem Content="Internal / Default Camera (Index 0)"/>
+                    <ComboBoxItem Content="USB Camera 1 (Index 1)"/>
+                    <ComboBoxItem Content="USB Camera 2 (Index 2)"/>
+                </ComboBox>
 
                 <Separator Margin="0,20,0,30" Background="#E2E8F0"/>
 

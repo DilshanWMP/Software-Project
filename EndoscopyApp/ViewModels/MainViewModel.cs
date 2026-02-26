@@ -65,22 +65,23 @@ namespace EndoscopyApp.ViewModels
         }
 
         public void NavigateTo(ViewModelBase viewModel)
-{
-    CurrentViewModel = viewModel;
-    
-    // Combine both lists from both branches
-    if (viewModel is LoginViewModel || viewModel is HomeViewModel || 
-        viewModel is PatientsViewModel || viewModel is LiveViewModel || 
-        viewModel is RecordViewModel || viewModel is SelectPatientViewModel ||
-        viewModel is RecordedVideosViewModel || viewModel is PatientMediaViewModel)
-    {
-        SidebarVisibility = Visibility.Collapsed;
-    }
-    else
-    {
-        SidebarVisibility = Visibility.Visible;
-    }
-}
+        {
+            CurrentViewModel = viewModel;
+
+            // Hide sidebar for most views to maximize workspace
+            if (viewModel is LoginViewModel || viewModel is HomeViewModel ||
+                viewModel is PatientsViewModel || viewModel is LiveViewModel ||
+                viewModel is RecordViewModel || viewModel is SelectPatientViewModel ||
+                viewModel is RecordedVideosViewModel || viewModel is PatientMediaViewModel ||
+                viewModel is SettingsViewModel)
+            {
+                SidebarVisibility = Visibility.Collapsed;
+            }
+            else
+            {
+                SidebarVisibility = Visibility.Visible;
+            }
+        }
 
         [RelayCommand]
         public void NavigateToLive()
@@ -122,7 +123,7 @@ namespace EndoscopyApp.ViewModels
         {
             if (CurrentViewModel is SettingsViewModel) return;
 
-             if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+            if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
 
             NavigateTo(new SettingsViewModel(this));
             PageTitle = "System Settings";

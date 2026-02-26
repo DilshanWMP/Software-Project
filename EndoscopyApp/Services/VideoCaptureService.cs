@@ -12,24 +12,67 @@ namespace EndoscopyApp.Services
         private VideoCapture? _capture;
         private CancellationTokenSource? _cts;
         private Task? _captureTask;
-        
+        private DateTime _lastWriteTime;
+
         public event EventHandler<WriteableBitmap>? FrameReady;
 
         public bool IsRunning { get; private set; }
 
-        public void Start(int deviceIndex = 0)
+        public async Task Start(int deviceIndex = 0)
         {
             if (IsRunning) return;
 
-            _capture = new VideoCapture(deviceIndex);
-            if (!_capture.IsOpened())
+            try
             {
-                throw new Exception("Could not open video device.");
-            }
+                // Try DSHOW first as it handles high res better on Windows
+                _capture = new VideoCapture(deviceIndex, VideoCaptureAPIs.DSHOW);
 
-            IsRunning = true;
-            _cts = new CancellationTokenSource();
-            _captureTask = Task.Run(() => CaptureLoop(_cts.Token));
+                if (!_capture.IsOpened())
+                {
+                    _capture = new VideoCapture(deviceIndex);
+                }
+
+                if (!_capture.IsOpened())
+                {
+                    throw new Exception("Camera could not be opened.");
+                }
+
+                // Try to set high resolution if supported
+                // We don't throw if these fail, as some cameras are picky
+                try
+                {
+                    _capture.Set(VideoCaptureProperties.FourCC, VideoWriter.FourCC('M', 'J', 'P', 'G'));
+                    _capture.Set(VideoCaptureProperties.FrameWidth, 1920);
+                    _capture.Set(VideoCaptureProperties.FrameHeight, 1080);
+                }
+                catch { /* Ignore setting failures */ }
+
+                // Test if we can actually read a frame
+                // Wait a moment for the camera buffer to warm up
+                await Task.Delay(500);
+                using var testFrame = new Mat();
+                bool canRead = _capture.Read(testFrame);
+
+                if (!canRead || testFrame.Empty())
+                {
+                    // If DSHOW + HighRes failed to produce a frame, try one more time with default settings
+                    _capture.Release();
+                    _capture = new VideoCapture(deviceIndex);
+                    // One more small delay for the fallback
+                    await Task.Delay(500);
+                }
+
+                IsRunning = true;
+                _cts = new CancellationTokenSource();
+                _captureTask = Task.Run(() => CaptureLoop(_cts.Token));
+            }
+            catch (Exception ex)
+            {
+                IsRunning = false;
+                _capture?.Release();
+                _capture = null;
+                throw new Exception($"Failed to start camera: {ex.Message}");
+            }
         }
 
         public void Stop()
@@ -39,7 +82,7 @@ namespace EndoscopyApp.Services
             IsRunning = false;
             _cts?.Cancel();
             try { _captureTask?.Wait(1000); } catch { /* Ignore cancellation */ }
-            
+
             _capture?.Release();
             _capture?.Dispose();
             _capture = null;
@@ -48,30 +91,30 @@ namespace EndoscopyApp.Services
         private VideoWriter? _writer;
         public bool IsRecording { get; private set; }
 
+        private double _recordedFps = 20.0;
+
         public void StartRecording(string filePath)
         {
             if (IsRecording || _capture == null) return;
 
-            // Define codec (MJPG is common/safe, or XVID)
-            // fourcc: 'M', 'J', 'P', 'G' -> .avi
-            // fourcc: 'H', '2', '6', '4' -> .mp4 (requires openh264 on windows sometimes)
-            // Let's use MJPG for simplicity and .avi for now to ensure compatibility without extra dlls
+            // Use a stable 20 FPS for recording to balance quality and file size
+            _recordedFps = 20.0;
             var fourcc = VideoWriter.FourCC('M', 'J', 'P', 'G');
-            var fps = 30.0;
             var size = new Size(_capture.FrameWidth, _capture.FrameHeight);
-            
-            _writer = new VideoWriter(filePath, fourcc, fps, size);
-            
+
+            _writer = new VideoWriter(filePath, fourcc, _recordedFps, size);
+
             if (_writer.IsOpened())
             {
                 IsRecording = true;
+                _lastWriteTime = DateTime.Now;
             }
         }
 
         public void StopRecording()
         {
             if (!IsRecording) return;
-            
+
             IsRecording = false;
             _writer?.Release();
             _writer?.Dispose();
@@ -80,16 +123,17 @@ namespace EndoscopyApp.Services
 
         public Mat CaptureSnapshot()
         {
-             if (_capture != null && _capture.IsOpened())
-             {
-                 var frame = new Mat();
-                 _capture.Read(frame);
-                 return frame;
-             }
-             return new Mat();
+            if (_capture != null && _capture.IsOpened())
+            {
+                var frame = new Mat();
+                _capture.Read(frame);
+                return frame;
+            }
+            return new Mat();
         }
-        
-        // Revised CaptureLoop to handle recording
+
+        private bool _isProcessingFrame = false;
+
         private async Task CaptureLoop(CancellationToken token)
         {
             using var frame = new Mat();
@@ -97,25 +141,44 @@ namespace EndoscopyApp.Services
             {
                 if (_capture != null && _capture.Read(frame) && !frame.Empty())
                 {
-                    // Recording
+                    // Recording - ensure we write at the correct intervals to maintain real-time speed
                     if (IsRecording && _writer != null && _writer.IsOpened())
                     {
-                        _writer.Write(frame);
+                        var now = DateTime.Now;
+                        var elapsed = (now - _lastWriteTime).TotalMilliseconds;
+                        var frameInterval = 1000.0 / _recordedFps;
+
+                        // If the camera is slow, we "stuff" or duplicate frames to fill the time gap.
+                        // This prevents the video from playing back fast.
+                        while (elapsed >= frameInterval)
+                        {
+                            _writer.Write(frame);
+                            elapsed -= frameInterval;
+                            _lastWriteTime = _lastWriteTime.AddMilliseconds(frameInterval);
+                        }
                     }
 
-                    // UI Update
-                    try 
+                    // UI Update - skip if the last frame is still being processed by the UI
+                    if (!_isProcessingFrame)
                     {
-                        var bitmap = frame.ToWriteableBitmap();
-                        bitmap.Freeze();
-                        FrameReady?.Invoke(this, bitmap);
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error converting frame: {ex.Message}");
+                        try
+                        {
+                            _isProcessingFrame = true;
+                            var bitmap = frame.ToWriteableBitmap();
+                            bitmap.Freeze();
+                            FrameReady?.Invoke(this, bitmap);
+                            _isProcessingFrame = false;
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error converting frame: {ex.Message}");
+                            _isProcessingFrame = false;
+                        }
                     }
                 }
-                await Task.Delay(33, token);
+
+                // Small delay to prevent 100% CPU usage but fast enough for 30-60fps
+                await Task.Delay(5, token);
             }
         }
 

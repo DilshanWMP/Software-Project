@@ -114,42 +114,52 @@ namespace EndoscopyApp.ViewModels
 
             int.TryParse(NewPatientAge, out int age);
 
-            if (IsEditing && _editingPatient != null)
+            try
             {
-                _editingPatient.Nic = NewPatientId;
-                _editingPatient.Name = NewPatientName;
-                _editingPatient.Age = age;
-                _editingPatient.Gender = NewPatientGender;
-                _editingPatient.Phone = NewPatientPhone;
-                _editingPatient.Notes = NewPatientNotes;
-
-                _dbService.UpdatePatient(_editingPatient);
-                
-                // Refresh the list to show changes (since Patient doesn't implement INotifyPropertyChanged)
-                var index = Patients.IndexOf(_editingPatient);
-                if (index != -1)
+                if (IsEditing && _editingPatient != null)
                 {
-                    Patients[index] = _editingPatient;
+                    _editingPatient.Nic = NewPatientId;
+                    _editingPatient.Name = NewPatientName;
+                    _editingPatient.Age = age;
+                    _editingPatient.Gender = NewPatientGender;
+                    _editingPatient.Phone = NewPatientPhone;
+                    _editingPatient.Notes = NewPatientNotes;
+
+                    _dbService.UpdatePatient(_editingPatient);
+
+                    // Refresh the list to show changes (since Patient doesn't implement INotifyPropertyChanged)
+                    var index = Patients.IndexOf(_editingPatient);
+                    if (index != -1)
+                    {
+                        Patients[index] = _editingPatient;
+                    }
+                    System.Windows.MessageBox.Show("Patient updated successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }
-            }
-            else
-            {
-                var patient = new Patient
+                else
                 {
-                    Nic = NewPatientId,
-                    Name = NewPatientName,
-                    Age = age,
-                    Gender = NewPatientGender,
-                    Phone = NewPatientPhone,
-                    Notes = NewPatientNotes,
-                    CreatedAt = System.DateTime.Now
-                };
+                    var patient = new Patient
+                    {
+                        Nic = NewPatientId,
+                        Name = NewPatientName,
+                        Age = age,
+                        Gender = NewPatientGender,
+                        Phone = NewPatientPhone,
+                        Notes = NewPatientNotes,
+                        CreatedAt = System.DateTime.Now
+                    };
 
-                _dbService.AddPatient(patient);
-                Patients.Insert(0, patient);
+                    _dbService.AddPatient(patient);
+                    Patients.Insert(0, patient);
+                    System.Windows.MessageBox.Show("Patient added successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                }
+
+                IsAddModalOpen = false;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Database Error: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
 
-            IsAddModalOpen = false;
         }
 
         [RelayCommand]
