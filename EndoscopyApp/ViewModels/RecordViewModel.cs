@@ -14,8 +14,10 @@ namespace EndoscopyApp.ViewModels
     {
         private readonly VideoCaptureService _videoService;
         private readonly DatabaseService _dbService;
+        private readonly SettingsService _settingsService;
         private readonly MainViewModel? _mainViewModel;
         private Patient? _currentPatient;
+        private AppSettings _settings;
 
         [ObservableProperty]
         private string _patientName = "";
@@ -51,6 +53,8 @@ namespace EndoscopyApp.ViewModels
             _videoService = new VideoCaptureService();
             _videoService.FrameReady += OnFrameReady;
             _dbService = new DatabaseService();
+            _settingsService = new SettingsService();
+            _settings = _settingsService.LoadSettings();
         }
 
         public RecordViewModel(MainViewModel mainViewModel) : this()
@@ -58,7 +62,7 @@ namespace EndoscopyApp.ViewModels
             _mainViewModel = mainViewModel;
 
             // Automatically start camera when navigating to this view
-            StartCamera();
+            _ = StartCamera(); // Fire and forget safely
         }
 
         public void SetPatient(Patient patient)
@@ -72,16 +76,27 @@ namespace EndoscopyApp.ViewModels
             IsPatientRegistered = true;
         }
 
+        private bool _isRendering = false;
         private void OnFrameReady(object? sender, WriteableBitmap bitmap)
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            if (_isRendering) return;
+
+            _isRendering = true;
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
            {
-               CurrentFrame = bitmap;
-           });
+               try
+               {
+                   CurrentFrame = bitmap;
+               }
+               finally
+               {
+                   _isRendering = false;
+               }
+           }, System.Windows.Threading.DispatcherPriority.Render);
         }
 
         [RelayCommand]
-        public void StartSession()
+        public async Task StartSession()
         {
             if (string.IsNullOrWhiteSpace(PatientName))
             {
@@ -109,9 +124,10 @@ namespace EndoscopyApp.ViewModels
             {
                 _dbService.AddPatient(_currentPatient);
                 IsPatientRegistered = true;
+                MessageBox.Show("Patient registered successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 // Start Camera automatically
-                StartCamera();
+                await StartCamera();
             }
             catch (Exception ex)
             {
@@ -120,11 +136,13 @@ namespace EndoscopyApp.ViewModels
         }
 
         [RelayCommand]
-        public void StartCamera()
+        public async Task StartCamera()
         {
+            if (IsCameraRunning) return;
+
             try
             {
-                _videoService.Start();
+                await _videoService.Start(_settings.CameraIndex);
                 IsCameraRunning = true;
             }
             catch (Exception ex)
@@ -160,8 +178,12 @@ namespace EndoscopyApp.ViewModels
             }
             else
             {
-                // Create directory for patient
-                string patientDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", _currentPatient.Id.ToString());
+                // Create directory for patient using settings path
+                string baseDir = string.IsNullOrWhiteSpace(_settings.MediaPath)
+                    ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media")
+                    : _settings.MediaPath;
+
+                string patientDir = Path.Combine(baseDir, _currentPatient.Id.ToString());
                 Directory.CreateDirectory(patientDir);
                 string fileName = $"REC_{DateTime.Now:yyyyMMdd_HHmmss}.avi";
                 string filePath = Path.Combine(patientDir, fileName);
@@ -213,7 +235,12 @@ namespace EndoscopyApp.ViewModels
             var frame = _videoService.CaptureSnapshot();
             if (!frame.Empty())
             {
-                string patientDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media", _currentPatient.Id.ToString());
+                // Create directory for patient using settings path
+                string baseDir = string.IsNullOrWhiteSpace(_settings.MediaPath)
+                    ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media")
+                    : _settings.MediaPath;
+
+                string patientDir = Path.Combine(baseDir, _currentPatient.Id.ToString());
                 Directory.CreateDirectory(patientDir);
                 string fileName = $"IMG_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
                 string filePath = Path.Combine(patientDir, fileName);
@@ -231,4 +258,5 @@ namespace EndoscopyApp.ViewModels
             _videoService.Dispose();
         }
     }
+
 }

@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows.Media.Imaging;
 using EndoscopyApp.Services;
+using EndoscopyApp.Models;
 using System.Windows.Threading;
 
 namespace EndoscopyApp.ViewModels
@@ -10,6 +11,8 @@ namespace EndoscopyApp.ViewModels
     {
         private readonly VideoCaptureService _videoService;
         private readonly MainViewModel? _mainViewModel;
+        private readonly SettingsService _settingsService;
+        private AppSettings _settings;
 
         [ObservableProperty]
         private WriteableBitmap? _currentFrame;
@@ -21,6 +24,8 @@ namespace EndoscopyApp.ViewModels
         {
             _videoService = new VideoCaptureService();
             _videoService.FrameReady += OnFrameReady;
+            _settingsService = new SettingsService();
+            _settings = _settingsService.LoadSettings();
         }
 
         public LiveViewModel(MainViewModel mainViewModel) : this()
@@ -28,26 +33,39 @@ namespace EndoscopyApp.ViewModels
             _mainViewModel = mainViewModel;
         }
 
+        private bool _isRendering = false;
         private void OnFrameReady(object? sender, WriteableBitmap bitmap)
         {
-            // Update UI on UI thread
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            if (_isRendering) return; // Drop frame if UI is still busy
+
+            _isRendering = true;
+            System.Windows.Application.Current.Dispatcher.BeginInvoke(() =>
             {
-                CurrentFrame = bitmap;
-            });
+                try
+                {
+                    CurrentFrame = bitmap;
+                }
+                finally
+                {
+                    _isRendering = false;
+                }
+            }, System.Windows.Threading.DispatcherPriority.Render);
         }
 
         [RelayCommand]
-        public void StartCamera()
+        public async Task StartCamera()
         {
+            if (IsCameraRunning) return;
+
             try
             {
-                _videoService.Start();
+                // Run camera initialization in the background to prevent UI freezing
+                await _videoService.Start(_settings.CameraIndex);
                 IsCameraRunning = true;
             }
             catch (System.Exception ex)
             {
-                // Handle error
+                System.Windows.MessageBox.Show($"Camera Error: {ex.Message}");
             }
         }
 
