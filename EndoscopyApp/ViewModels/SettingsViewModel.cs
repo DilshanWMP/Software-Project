@@ -15,10 +15,10 @@ namespace EndoscopyApp.ViewModels
 
         [ObservableProperty]
         private string _currentPassword = "";
-        
+
         [ObservableProperty]
         private string _newPassword = "";
-        
+
         [ObservableProperty]
         private string _confirmPassword = "";
 
@@ -34,14 +34,18 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private string _mediaPath = "";
 
+        [ObservableProperty]
+        private int _cameraIndex;
+
         public SettingsViewModel(MainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
             _settingsService = new SettingsService();
-            
+
             // Load current settings
             _currentSettings = _settingsService.LoadSettings();
             MediaPath = _currentSettings.MediaPath;
+            CameraIndex = _currentSettings.CameraIndex;
         }
 
         [RelayCommand]
@@ -86,8 +90,8 @@ namespace EndoscopyApp.ViewModels
                 return;
             }
 
-            bool isPasswordChangeAttempted = !string.IsNullOrWhiteSpace(CurrentPassword) || 
-                                             !string.IsNullOrWhiteSpace(NewPassword) || 
+            bool isPasswordChangeAttempted = !string.IsNullOrWhiteSpace(CurrentPassword) ||
+                                             !string.IsNullOrWhiteSpace(NewPassword) ||
                                              !string.IsNullOrWhiteSpace(ConfirmPassword);
 
             if (isPasswordChangeAttempted)
@@ -97,17 +101,18 @@ namespace EndoscopyApp.ViewModels
                     MessageBox.Show("Current password is incorrect.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
-                
+
                 if (string.IsNullOrWhiteSpace(NewPassword) || NewPassword != ConfirmPassword)
                 {
                     MessageBox.Show("New passwords do not match or are empty.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
-                
+
                 _currentSettings.AdminPassword = NewPassword;
             }
 
             _currentSettings.MediaPath = MediaPath;
+            _currentSettings.CameraIndex = CameraIndex;
 
             try
             {

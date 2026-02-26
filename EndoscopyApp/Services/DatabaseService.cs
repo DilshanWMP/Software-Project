@@ -22,7 +22,9 @@ namespace EndoscopyApp.Services
             using var connection = new SqliteConnection(_connectionString);
             connection.Open();
 
-            var command = connection.CreateCommand();
+            using var command = connection.CreateCommand();
+
+            // Create Patients table
             command.CommandText = @"
                 CREATE TABLE IF NOT EXISTS Patients (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,9 +33,14 @@ namespace EndoscopyApp.Services
                     Age INTEGER,
                     Gender TEXT,
                     Phone TEXT,
+                    Notes TEXT,
                     CreatedAt TEXT
                 );
+            ";
+            command.ExecuteNonQuery();
 
+            // Create MediaFiles table
+            command.CommandText = @"
                 CREATE TABLE IF NOT EXISTS MediaFiles (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
                     PatientId INTEGER,
@@ -45,47 +52,58 @@ namespace EndoscopyApp.Services
             ";
             command.ExecuteNonQuery();
 
+            // Migration: Check if Nic column exists (for older versions)
             try
             {
                 command.CommandText = "ALTER TABLE Patients ADD COLUMN Nic TEXT;";
                 command.ExecuteNonQuery();
             }
-            catch (SqliteException ex) when (ex.SqliteErrorCode == 1)
-            {
-                // Column already exists, ignore
-            }
+            catch { /* Ignore if exists */ }
 
-            // Migration: Add Notes column if it doesn't exist
+            // Migration: Check if Notes column exists
             try
             {
                 command.CommandText = "ALTER TABLE Patients ADD COLUMN Notes TEXT;";
                 command.ExecuteNonQuery();
             }
-            catch (SqliteException ex) when (ex.SqliteErrorCode == 1) // 1 is usually "duplicate column name"
-            {
-                // Column already exists, ignore
-            }
+            catch { /* Ignore if exists */ }
         }
 
         public void AddPatient(Patient patient)
         {
             using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            var command = connection.CreateCommand();
-            command.CommandText = @"
-                INSERT INTO Patients (Nic, Name, Age, Gender, Phone, Notes, CreatedAt)
-                VALUES ($nic, $name, $age, $gender, $phone, $notes, $createdAt);
-                SELECT last_insert_rowid();
-            ";
-            command.Parameters.AddWithValue("$nic", (object?)patient.Nic ?? DBNull.Value);
-            command.Parameters.AddWithValue("$name", patient.Name);
-            command.Parameters.AddWithValue("$age", patient.Age);
-            command.Parameters.AddWithValue("$gender", patient.Gender);
-            command.Parameters.AddWithValue("$phone", patient.Phone);
-            command.Parameters.AddWithValue("$notes", (object?)patient.Notes ?? DBNull.Value);
-            command.Parameters.AddWithValue("$createdAt", patient.CreatedAt.ToString("o"));
 
-            patient.Id = Convert.ToInt32(command.ExecuteScalar());
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                var command = connection.CreateCommand();
+                command.Transaction = transaction;
+                command.CommandText = @"
+                    INSERT INTO Patients (Nic, Name, Age, Gender, Phone, Notes, CreatedAt)
+                    VALUES ($nic, $name, $age, $gender, $phone, $notes, $createdAt);
+                ";
+                command.Parameters.AddWithValue("$nic", (object?)patient.Nic ?? DBNull.Value);
+                command.Parameters.AddWithValue("$name", patient.Name);
+                command.Parameters.AddWithValue("$age", patient.Age);
+                command.Parameters.AddWithValue("$gender", patient.Gender);
+                command.Parameters.AddWithValue("$phone", patient.Phone);
+                command.Parameters.AddWithValue("$notes", (object?)patient.Notes ?? DBNull.Value);
+                command.Parameters.AddWithValue("$createdAt", patient.CreatedAt.ToString("o"));
+
+                command.ExecuteNonQuery();
+
+                // Get the generated ID
+                command.CommandText = "SELECT last_insert_rowid();";
+                patient.Id = Convert.ToInt32(command.ExecuteScalar());
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         public List<Patient> GetAllPatients()
@@ -95,7 +113,7 @@ namespace EndoscopyApp.Services
             connection.Open();
             var command = connection.CreateCommand();
             command.CommandText = "SELECT Id, Nic, Name, Age, Gender, Phone, Notes, CreatedAt FROM Patients ORDER BY CreatedAt DESC";
-            
+
             using var reader = command.ExecuteReader();
             while (reader.Read())
             {
@@ -139,7 +157,7 @@ namespace EndoscopyApp.Services
         {
             using var connection = new SqliteConnection(_connectionString);
             connection.Open();
-            
+
             // Delete associated media files first
             var deleteMediaCommand = connection.CreateCommand();
             deleteMediaCommand.CommandText = "DELETE FROM MediaFiles WHERE PatientId = $patientId";
@@ -151,7 +169,6 @@ namespace EndoscopyApp.Services
             command.Parameters.AddWithValue("$id", patientId);
             command.ExecuteNonQuery();
         }
-
-        // Add more methods as needed for MediaFiles
     }
 }
+

@@ -53,7 +53,7 @@ namespace EndoscopyApp.ViewModels
                     {
                         var fileName = Path.GetFileName(file);
                         var media = new MediaFileViewModel(file);
-                        
+
                         if (fileName.StartsWith("REC_") || file.EndsWith(".avi") || file.EndsWith(".mp4"))
                         {
                             Videos.Add(media);
@@ -67,7 +67,7 @@ namespace EndoscopyApp.ViewModels
             }
             catch (System.Exception ex)
             {
-                // Handle or log error
+                MessageBox.Show($"Failed to load media: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -82,10 +82,35 @@ namespace EndoscopyApp.ViewModels
         {
             if (File.Exists(media.FilePath))
             {
-                // Simple export to Desktop for now
-                string dest = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), media.FileName);
-                File.Copy(media.FilePath, dest, true);
-                MessageBox.Show($"File exported to: {dest}");
+                var extension = Path.GetExtension(media.FilePath).ToLower();
+                var filter = extension switch
+                {
+                    ".avi" => "AVI Video|*.avi",
+                    ".mp4" => "MP4 Video|*.mp4",
+                    ".jpg" or ".jpeg" => "JPEG Image|*.jpg",
+                    ".png" => "PNG Image|*.png",
+                    _ => "All Files|*.*"
+                };
+
+                var saveFileDialog = new Microsoft.Win32.SaveFileDialog
+                {
+                    FileName = media.FileName,
+                    Filter = filter,
+                    InitialDirectory = System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop)
+                };
+
+                if (saveFileDialog.ShowDialog() == true)
+                {
+                    try
+                    {
+                        File.Copy(media.FilePath, saveFileDialog.FileName, true);
+                        MessageBox.Show("File downloaded successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                    catch (System.Exception ex)
+                    {
+                        MessageBox.Show($"Failed to download file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
             }
         }
 
@@ -109,10 +134,10 @@ namespace EndoscopyApp.ViewModels
     {
         [ObservableProperty]
         private string _filePath;
-        
+
         [ObservableProperty]
         private string _fileName;
-        
+
         [ObservableProperty]
         private System.DateTime _timestamp;
 
