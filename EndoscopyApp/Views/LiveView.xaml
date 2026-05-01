@@ -11,7 +11,7 @@
         <!-- Back Button -->
         <Button Command="{Binding NavigateBackCommand}" 
                 Style="{StaticResource MaterialDesignFlatButton}" 
-                Padding="0" HorizontalAlignment="Left" VerticalAlignment="Top"
+                HorizontalAlignment="Left" VerticalAlignment="Top"
                 Width="48" Height="48" Margin="16">
             <materialDesign:PackIcon Kind="ArrowLeft" Width="28" Height="28" Foreground="White"/>
         </Button>

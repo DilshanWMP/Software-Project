@@ -19,7 +19,7 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Command="{Binding NavigateBackCommand}" 
                         Style="{StaticResource MaterialDesignFlatButton}" 
-                        Padding="0" Width="45" Height="45" Margin="0,0,20,0">
+                        Width="45" Height="45" Margin="0,0,20,0">
                     <materialDesign:PackIcon Kind="ArrowLeft" Width="24" Height="24" Foreground="Black"/>
                 </Button>
                 <TextBlock Text="Live Video" FontSize="30" FontWeight="ExtraBold" VerticalAlignment="Center" Foreground="#1A202C"/>
@@ -42,7 +42,7 @@
                             <Button Command="{Binding DataContext.SelectPatientCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                     CommandParameter="{Binding}"
                                     Style="{StaticResource MaterialDesignFlatButton}"
-                                    Padding="0" Margin="10" Height="Auto" VerticalAlignment="Top" HorizontalContentAlignment="Stretch">
+                                    Padding="0" Margin="10" Height="Auto" HorizontalContentAlignment="Stretch">
                                 <materialDesign:Card Background="White" UniformCornerRadius="12" Padding="20">
                                     <Grid>
                                         <Grid.ColumnDefinitions>

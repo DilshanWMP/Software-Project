@@ -20,7 +20,7 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Command="{Binding NavigateBackCommand}" 
                             Style="{StaticResource MaterialDesignFlatButton}" 
-                            Padding="0" Width="45" Height="45" Margin="0,0,20,0">
+                            Width="45" Height="45" Margin="0,0,20,0">
                         <materialDesign:PackIcon Kind="ArrowLeft" Width="24" Height="24"/>
                     </Button>
                     <TextBlock Text="Patient Details" FontSize="30" FontWeight="ExtraBold" VerticalAlignment="Center" Foreground="#1A202C"/>
