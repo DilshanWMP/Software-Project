@@ -21,7 +21,7 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Button Command="{Binding NavigateBackCommand}" 
                             Style="{StaticResource MaterialDesignFlatButton}" 
-                            Padding="0" Width="40" Height="40" Margin="0,0,16,0">
+                            Width="40" Height="40" Margin="0,0,16,0">
                         <materialDesign:PackIcon Kind="ArrowLeft" Width="24" Height="24" Foreground="Black"/>
                     </Button>
                     <StackPanel>
