@@ -64,6 +64,13 @@ namespace EndoscopyApp.ViewModels
             PageTitle = "Recorded Media";
         }
 
+        public void NavigateToMediaViewer(MediaFileViewModel media, Patient patient)
+        {
+            if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
+            NavigateTo(new MediaViewerViewModel(this, media, patient));
+            PageTitle = "Media Viewer";
+        }
+
         public void NavigateTo(ViewModelBase viewModel)
         {
             CurrentViewModel = viewModel;
@@ -73,7 +80,7 @@ namespace EndoscopyApp.ViewModels
                 viewModel is PatientsViewModel || viewModel is LiveViewModel ||
                 viewModel is RecordViewModel || viewModel is SelectPatientViewModel ||
                 viewModel is RecordedVideosViewModel || viewModel is PatientMediaViewModel ||
-                viewModel is SettingsViewModel)
+                viewModel is SettingsViewModel || viewModel is MediaViewerViewModel)
             {
                 SidebarVisibility = Visibility.Collapsed;
             }
