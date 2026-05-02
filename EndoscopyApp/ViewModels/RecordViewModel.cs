@@ -18,6 +18,7 @@ namespace EndoscopyApp.ViewModels
         private readonly VideoCaptureService _videoService;
         private readonly DatabaseService _dbService;
         private readonly SettingsService _settingsService;
+        private FootPedalService? _footPedalService;
         private readonly MainViewModel? _mainViewModel;
         private Patient? _currentPatient;
         private AppSettings _settings;
@@ -58,6 +59,24 @@ namespace EndoscopyApp.ViewModels
             _dbService = new DatabaseService();
             _settingsService = new SettingsService();
             _settings = _settingsService.LoadSettings();
+
+            // Initialize Foot Pedal using settings
+            if (!string.IsNullOrWhiteSpace(_settings.FootPedalPort) && _settings.FootPedalPort != "None")
+            {
+                _footPedalService = new FootPedalService(_settings.FootPedalPort);
+                _footPedalService.PedalPressed += OnPedalPressed;
+            }
+        }
+
+        private void OnPedalPressed()
+        {
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (TakeSnapshotCommand.CanExecute(null))
+                {
+                    TakeSnapshotCommand.Execute(null);
+                }
+            }));
         }
 
         public RecordViewModel(MainViewModel mainViewModel) : this()
@@ -259,6 +278,7 @@ namespace EndoscopyApp.ViewModels
         public void Cleanup()
         {
             _videoService.Stop();
+            _footPedalService?.Dispose();
             _videoService.Dispose();
         }
     }
