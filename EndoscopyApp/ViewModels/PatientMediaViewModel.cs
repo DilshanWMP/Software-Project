@@ -128,6 +128,15 @@ namespace EndoscopyApp.ViewModels
                 }
             }
         }
+
+        [RelayCommand]
+        private void ViewMedia(MediaFileViewModel media)
+        {
+            if (File.Exists(media.FilePath))
+            {
+                _mainViewModel.NavigateToMediaViewer(media, Patient);
+            }
+        }
     }
 
     public partial class MediaFileViewModel : ObservableObject
@@ -141,11 +150,67 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private System.DateTime _timestamp;
 
+        [ObservableProperty]
+        private System.Windows.Media.ImageSource? _thumbnail;
+
+        [ObservableProperty]
+        private bool _isVideo;
+
         public MediaFileViewModel(string filePath)
         {
             _filePath = filePath;
             _fileName = Path.GetFileName(filePath);
             _timestamp = File.GetCreationTime(filePath);
+
+            var ext = Path.GetExtension(filePath).ToLower();
+            IsVideo = _fileName.StartsWith("REC_") || ext == ".avi" || ext == ".mp4";
+
+            _ = GenerateThumbnailAsync();
+        }
+
+        private async System.Threading.Tasks.Task GenerateThumbnailAsync()
+        {
+            if (IsVideo)
+            {
+                Thumbnail = await System.Threading.Tasks.Task.Run(() =>
+                {
+                    try
+                    {
+                        using var capture = new OpenCvSharp.VideoCapture(FilePath);
+                        if (capture.IsOpened())
+                        {
+                            using var mat = new OpenCvSharp.Mat();
+                            if (capture.Read(mat) && !mat.Empty())
+                            {
+                                var bmp = OpenCvSharp.WpfExtensions.BitmapSourceConverter.ToBitmapSource(mat);
+                                bmp.Freeze();
+                                return bmp;
+                            }
+                        }
+                    }
+                    catch { }
+                    return null;
+                });
+            }
+            else
+            {
+                Thumbnail = await System.Threading.Tasks.Task.Run(() =>
+                {
+                    try
+                    {
+                        var bmp = new System.Windows.Media.Imaging.BitmapImage();
+                        bmp.BeginInit();
+                        bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                        bmp.UriSource = new System.Uri(FilePath);
+                        bmp.DecodePixelWidth = 350;
+                        bmp.EndInit();
+                        bmp.Freeze();
+                        return bmp;
+                    }
+                    catch { }
+                    return null;
+                });
+            }
         }
     }
 }

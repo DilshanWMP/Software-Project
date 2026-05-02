@@ -1,4 +1,4 @@
-﻿<Window x:Class="EndoscopyApp.MainWindow"
+<Window x:Class="EndoscopyApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -46,6 +46,9 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels:PatientMediaViewModel}">
             <views:PatientMediaView/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:MediaViewerViewModel}">
+            <views:MediaViewerView/>
         </DataTemplate>
     </Window.Resources>
 
