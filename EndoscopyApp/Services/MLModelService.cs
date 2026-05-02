@@ -73,7 +73,7 @@ namespace EndoscopyApp.Services
             }
         }
 
-        public (string prediction, float confidence)? AnalyseImage(string imagePath)
+        public (string prediction, float confidence, string? analyzedImagePath)? AnalyseImage(string imagePath)
         {
             if (_session == null || !File.Exists(imagePath)) return null;
 
@@ -124,7 +124,7 @@ namespace EndoscopyApp.Services
 
                     var sortedScores = allScores.OrderByDescending(x => x.Score).ToList();
                     var lines = sortedScores.Select(x => $"{x.Name}: {(x.Score * 100).ToString("0.0")}%");
-                    return (string.Join("\n", lines), sortedScores.First().Score);
+                    return (string.Join("\n", lines), sortedScores.First().Score, null);
                 }
                 // YOLO Detection [1, 4 + classes, 8400]
                 else if (outputTensor.Dimensions.Length == 3)
@@ -132,7 +132,10 @@ namespace EndoscopyApp.Services
                     int numClasses = outputTensor.Dimensions[1] - 4;
                     int numAnchors = outputTensor.Dimensions[2];
                     
-                    // Find max score for EACH class
+                    int bestClassOverall = -1;
+                    int bestAnchorOverall = -1;
+                    float maxScoreOverall = 0f;
+
                     var allScores = new List<(string Name, float Score)>();
                     for (int c = 0; c < numClasses; c++)
                     {
@@ -144,17 +147,56 @@ namespace EndoscopyApp.Services
                             {
                                 maxScoreForClass = score;
                             }
+                            if (score > maxScoreOverall)
+                            {
+                                maxScoreOverall = score;
+                                bestClassOverall = c;
+                                bestAnchorOverall = a;
+                            }
                         }
                         string cName = _classes.ContainsKey(c) ? _classes[c] : $"Class {c}";
                         allScores.Add((cName, maxScoreForClass));
                     }
 
+                    string? analyzedImagePath = null;
+                    if (bestAnchorOverall != -1 && maxScoreOverall > 0.1f)
+                    {
+                        float cx = outputTensor[0, 0, bestAnchorOverall];
+                        float cy = outputTensor[0, 1, bestAnchorOverall];
+                        float w = outputTensor[0, 2, bestAnchorOverall];
+                        float h = outputTensor[0, 3, bestAnchorOverall];
+
+                        int origWidth = image.Width;
+                        int origHeight = image.Height;
+
+                        float scaleX = (float)origWidth / _inputWidth;
+                        float scaleY = (float)origHeight / _inputHeight;
+
+                        int left = (int)((cx - w / 2) * scaleX);
+                        int top = (int)((cy - h / 2) * scaleY);
+                        int right = (int)((cx + w / 2) * scaleX);
+                        int bottom = (int)((cy + h / 2) * scaleY);
+
+                        left = Math.Max(0, left);
+                        top = Math.Max(0, top);
+                        right = Math.Min(origWidth - 1, right);
+                        bottom = Math.Min(origHeight - 1, bottom);
+
+                        Cv2.Rectangle(image, new Point(left, top), new Point(right, bottom), Scalar.Red, 3);
+                        string bestClassName = _classes.ContainsKey(bestClassOverall) ? _classes[bestClassOverall] : $"Class {bestClassOverall}";
+                        string label = $"{bestClassName} {(maxScoreOverall * 100):0.0}%";
+                        Cv2.PutText(image, label, new Point(left, Math.Max(10, top - 10)), HersheyFonts.HersheySimplex, 0.9, Scalar.Red, 2);
+
+                        analyzedImagePath = Path.Combine(Path.GetDirectoryName(imagePath) ?? "", Path.GetFileNameWithoutExtension(imagePath) + "_analyzed" + Path.GetExtension(imagePath));
+                        Cv2.ImWrite(analyzedImagePath, image);
+                    }
+
                     var sortedScores = allScores.OrderByDescending(x => x.Score).ToList();
                     var lines = sortedScores.Select(x => $"{x.Name}: {(x.Score * 100).ToString("0.0")}%");
-                    return (string.Join("\n", lines), sortedScores.First().Score);
+                    return (string.Join("\n", lines), sortedScores.First().Score, analyzedImagePath);
                 }
                 
-                return ("Unknown Model Format", 0f);
+                return ("Unknown Model Format", 0f, null);
             }
             catch (Exception ex)
             {

@@ -161,7 +161,29 @@ namespace EndoscopyApp.ViewModels
             var result = _mlService.AnalyseImage(media.FilePath);
             if (result != null)
             {
-                MessageBox.Show($"AI Analysis Result:\n\n{result.Value.prediction}", "Analysis Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (!string.IsNullOrEmpty(result.Value.analyzedImagePath) && File.Exists(result.Value.analyzedImagePath))
+                {
+                    var imageWindow = new Window
+                    {
+                        Title = $"Analysis Result - {media.FileName}",
+                        Width = 800,
+                        Height = 600,
+                        WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                        Content = new System.Windows.Controls.Image
+                        {
+                            Source = new System.Windows.Media.Imaging.BitmapImage(new System.Uri(result.Value.analyzedImagePath))
+                            {
+                                CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad
+                            },
+                            Stretch = System.Windows.Media.Stretch.Uniform
+                        }
+                    };
+                    imageWindow.ShowDialog();
+                }
+                else
+                {
+                    MessageBox.Show($"AI Analysis Result:\n\n{result.Value.prediction}", "Analysis Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
             }
             else
             {
