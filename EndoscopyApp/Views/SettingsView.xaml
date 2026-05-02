@@ -68,6 +68,13 @@
                     <ComboBoxItem Content="USB Camera 2 (Index 2)"/>
                 </ComboBox>
 
+                <!-- Foot Pedal Configuration -->
+                <TextBlock Text="Foot Pedal Connection (COM Port)" FontSize="14" FontWeight="Medium" Foreground="#718096" Margin="0,5,0,5"/>
+                <ComboBox ItemsSource="{Binding AvailableComPorts}"
+                          SelectedItem="{Binding SelectedComPort}"
+                          Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                          Padding="15" Height="50" Margin="0,0,0,20"/>
+
                 <Separator Margin="0,20,0,30" Background="#E2E8F0"/>
 
                 <!-- Security Section Header -->

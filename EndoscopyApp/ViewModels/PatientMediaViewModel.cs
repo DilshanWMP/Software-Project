@@ -117,14 +117,21 @@ namespace EndoscopyApp.ViewModels
         [RelayCommand]
         private void DeleteMedia(MediaFileViewModel media)
         {
-            var result = MessageBox.Show($"Are you sure you want to delete {media.FileName}?", "Confirm Delete", MessageBoxButton.YesNo);
+            var result = MessageBox.Show($"Are you sure you want to delete {media.FileName}?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
                 if (File.Exists(media.FilePath))
                 {
-                    File.Delete(media.FilePath);
-                    Videos.Remove(media);
-                    Snapshots.Remove(media);
+                    try
+                    {
+                        File.Delete(media.FilePath);
+                        Videos.Remove(media);
+                        Snapshots.Remove(media);
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($"Could not delete file. It might be in use by another program.\n\nError: {ex.Message}", "Delete Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
             }
         }
