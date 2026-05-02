@@ -19,7 +19,7 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Button Command="{Binding NavigateBackCommand}" 
                         Style="{StaticResource MaterialDesignFlatButton}" 
-                        Width="45" Height="45" Margin="0,0,20,0">
+                        Padding="0" Width="45" Height="45" Margin="0,0,20,0">
                     <materialDesign:PackIcon Kind="ArrowLeft" Width="28" Height="28"/>
                 </Button>
                 <TextBlock Text="Recorded Media" FontSize="30" FontWeight="ExtraBold" VerticalAlignment="Center" Foreground="#1A202C"/>
@@ -45,20 +45,19 @@
                         <Setter Property="FontWeight" Value="Bold"/>
                         <Setter Property="Height" Value="60"/>
                         <Setter Property="Width" Value="462"/> <!-- Half of card width roughly -->
-                        <Setter Property="HorizontalContentAlignment" Value="Center"/>
                     </Style>
                 </TabControl.Resources>
                         
                         <TabItem>
                             <TabItem.Header>
-                                <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <TextBlock Text="Videos ("/>
                                     <TextBlock Text="{Binding Videos.Count}"/>
                                     <TextBlock Text=")"/>
                                 </StackPanel>
                             </TabItem.Header>
                             <ScrollViewer Margin="20" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-                                <ItemsControl ItemsSource="{Binding Videos}">
+                                <ItemsControl ItemsSource="{Binding Videos}" HorizontalAlignment="Left">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <WrapPanel />
@@ -71,30 +70,56 @@
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="200"/>
                                                         <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
                                                     </Grid.RowDefinitions>
                                                     
-                                                    <!-- Video Thumbnail Placeholder -->
-                                                    <Grid Grid.Row="0" Background="Black">
-                                                        <materialDesign:PackIcon Kind="PlayCircleOutline" Width="60" Height="60" Foreground="White" Opacity="0.5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Grid>
+                                                    <!-- Video Thumbnail -->
+                                                    <Button Grid.Row="0" Command="{Binding DataContext.ViewMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Padding="0" BorderThickness="0" Style="{StaticResource MaterialDesignFlatButton}" Height="200" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                                                        <Grid Background="Black">
+                                                            <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                                            <materialDesign:PackIcon Kind="PlayCircleOutline" Width="60" Height="60" Foreground="White" Opacity="0.8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Grid>
+                                                    </Button>
 
-                                                    <TextBlock Grid.Row="1" Text="{Binding Timestamp, StringFormat='MM/dd/yyyy, hh:mm:ss tt'}" Margin="15,15,15,10" Foreground="#718096" FontSize="14"/>
-
-                                                    <Grid Grid.Row="2" Margin="15,0,15,15">
+                                                    <Grid Grid.Row="1" Margin="15,10,5,10">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <Button Grid.Column="0" Command="{Binding DataContext.DownloadMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="#2B6CB0" Foreground="White" Height="40" materialDesign:ButtonAssist.CornerRadius="8">
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <materialDesign:PackIcon Kind="Download" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                                <TextBlock Text="Download" VerticalAlignment="Center" FontWeight="Bold"/>
-                                                            </StackPanel>
-                                                        </Button>
-                                                        <Button Grid.Column="1" Command="{Binding DataContext.DeleteMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="10,0,0,0" Width="40" Height="40" Background="#E53E3E" BorderBrush="Transparent" materialDesign:ButtonAssist.CornerRadius="8">
-                                                            <materialDesign:PackIcon Kind="TrashCanOutline" Foreground="White"/>
-                                                        </Button>
+                                                        <TextBlock Grid.Column="0" Text="{Binding Timestamp, StringFormat='MM/dd/yyyy, hh:mm:ss tt'}" Foreground="#718096" FontSize="14" VerticalAlignment="Center"/>
+                                                        
+                                                        <Grid Grid.Column="1">
+                                                            <ToggleButton x:Name="MenuButtonVideo" Width="32" Height="32" Cursor="Hand" Foreground="#718096">
+                                                                <ToggleButton.Template>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border Background="Transparent">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </ToggleButton.Template>
+                                                                <materialDesign:PackIcon Kind="DotsVertical" Width="24" Height="24"/>
+                                                            </ToggleButton>
+                                                            <Popup IsOpen="{Binding IsChecked, ElementName=MenuButtonVideo}" StaysOpen="False" PlacementTarget="{Binding ElementName=MenuButtonVideo}" Placement="Bottom" HorizontalOffset="-110" AllowsTransparency="True" PopupAnimation="Fade">
+                                                                <Border Background="White" CornerRadius="12" Padding="4" Margin="10">
+                                                                    <Border.Effect>
+                                                                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.15" Color="Black"/>
+                                                                    </Border.Effect>
+                                                                    <StackPanel Width="140">
+                                                                        <Button Command="{Binding DataContext.DownloadMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#2D3748" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42">
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <materialDesign:PackIcon Kind="Download" Margin="0,0,12,0" Foreground="#3182CE" VerticalAlignment="Center" Width="20" Height="20"/>
+                                                                                <TextBlock Text="Download" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="14"/>
+                                                                            </StackPanel>
+                                                                        </Button>
+                                                                        <Button Command="{Binding DataContext.DeleteMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#E53E3E" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42" Margin="0,2,0,0">
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <materialDesign:PackIcon Kind="TrashCanOutline" Margin="0,0,12,0" Foreground="#E53E3E" VerticalAlignment="Center" Width="20" Height="20"/>
+                                                                                <TextBlock Text="Delete" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="14"/>
+                                                                            </StackPanel>
+                                                                        </Button>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </Popup>
+                                                        </Grid>
                                                     </Grid>
                                                 </Grid>
                                             </materialDesign:Card>
@@ -106,7 +131,7 @@
 
                         <TabItem>
                             <TabItem.Header>
-                                <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <TextBlock Text="Snapshots ("/>
                                     <TextBlock Text="{Binding Snapshots.Count}"/>
                                     <TextBlock Text=")"/>
@@ -126,30 +151,55 @@
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="200"/>
                                                         <RowDefinition Height="Auto"/>
-                                                        <RowDefinition Height="Auto"/>
                                                     </Grid.RowDefinitions>
                                                     
-                                                    <!-- Image Thumbnail Placeholder -->
-                                                    <Grid Grid.Row="0" Background="#F8FAFC">
-                                                        <materialDesign:PackIcon Kind="ImageOutline" Width="60" Height="60" Foreground="#CBD5E0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                    </Grid>
+                                                    <!-- Image Thumbnail -->
+                                                    <Button Grid.Row="0" Command="{Binding DataContext.ViewMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Padding="0" BorderThickness="0" Style="{StaticResource MaterialDesignFlatButton}" Height="200" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+                                                        <Grid Background="#F8FAFC">
+                                                            <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+                                                        </Grid>
+                                                    </Button>
 
-                                                    <TextBlock Grid.Row="1" Text="{Binding Timestamp, StringFormat='MM/dd/yyyy, hh:mm:ss tt'}" Margin="15,15,15,10" Foreground="#718096" FontSize="14"/>
-
-                                                    <Grid Grid.Row="2" Margin="15,0,15,15">
+                                                    <Grid Grid.Row="1" Margin="15,10,5,10">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <Button Grid.Column="0" Command="{Binding DataContext.DownloadMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="#2B6CB0" Foreground="White" Height="40" materialDesign:ButtonAssist.CornerRadius="8">
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <materialDesign:PackIcon Kind="Download" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                                <TextBlock Text="Download" VerticalAlignment="Center" FontWeight="Bold"/>
-                                                            </StackPanel>
-                                                        </Button>
-                                                        <Button Grid.Column="1" Command="{Binding DataContext.DeleteMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Margin="10,0,0,0" Width="40" Height="40" Background="#E53E3E" BorderBrush="Transparent" materialDesign:ButtonAssist.CornerRadius="8">
-                                                            <materialDesign:PackIcon Kind="TrashCanOutline" Foreground="White"/>
-                                                        </Button>
+                                                        <TextBlock Grid.Column="0" Text="{Binding Timestamp, StringFormat='MM/dd/yyyy, hh:mm:ss tt'}" Foreground="#718096" FontSize="14" VerticalAlignment="Center"/>
+                                                        
+                                                        <Grid Grid.Column="1">
+                                                            <ToggleButton x:Name="MenuButtonSnapshot" Width="32" Height="32" Cursor="Hand" Foreground="#718096">
+                                                                <ToggleButton.Template>
+                                                                    <ControlTemplate TargetType="ToggleButton">
+                                                                        <Border Background="Transparent">
+                                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </ToggleButton.Template>
+                                                                <materialDesign:PackIcon Kind="DotsVertical" Width="24" Height="24"/>
+                                                            </ToggleButton>
+                                                            <Popup IsOpen="{Binding IsChecked, ElementName=MenuButtonSnapshot}" StaysOpen="False" PlacementTarget="{Binding ElementName=MenuButtonSnapshot}" Placement="Bottom" HorizontalOffset="-110" AllowsTransparency="True" PopupAnimation="Fade">
+                                                                <Border Background="White" CornerRadius="12" Padding="4" Margin="10">
+                                                                    <Border.Effect>
+                                                                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.15" Color="Black"/>
+                                                                    </Border.Effect>
+                                                                    <StackPanel Width="140">
+                                                                        <Button Command="{Binding DataContext.DownloadMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#2D3748" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42">
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <materialDesign:PackIcon Kind="Download" Margin="0,0,12,0" Foreground="#3182CE" VerticalAlignment="Center" Width="20" Height="20"/>
+                                                                                <TextBlock Text="Download" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="14"/>
+                                                                            </StackPanel>
+                                                                        </Button>
+                                                                        <Button Command="{Binding DataContext.DeleteMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#E53E3E" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42" Margin="0,2,0,0">
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <materialDesign:PackIcon Kind="TrashCanOutline" Margin="0,0,12,0" Foreground="#E53E3E" VerticalAlignment="Center" Width="20" Height="20"/>
+                                                                                <TextBlock Text="Delete" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="14"/>
+                                                                            </StackPanel>
+                                                                        </Button>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </Popup>
+                                                        </Grid>
                                                     </Grid>
                                                 </Grid>
                                             </materialDesign:Card>
