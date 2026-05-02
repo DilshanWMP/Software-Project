@@ -41,6 +41,8 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private bool _isRecording;
 
+        private string _currentVideoFilePath = "";
+
         [ObservableProperty]
         private string _patientId = "000000";
 
@@ -208,9 +210,9 @@ namespace EndoscopyApp.ViewModels
                 string patientDir = Path.Combine(baseDir, _currentPatient.Id.ToString());
                 Directory.CreateDirectory(patientDir);
                 string fileName = $"REC_{DateTime.Now:yyyyMMdd_HHmmss}.avi";
-                string filePath = Path.Combine(patientDir, fileName);
+                _currentVideoFilePath = Path.Combine(patientDir, fileName);
 
-                _videoService.StartRecording(filePath);
+                _videoService.StartRecording(_currentVideoFilePath);
                 IsRecording = true;
 
                 // Save metadata to DB (Placeholder implementation as DB service AddMedia not shown in previous step fully)
@@ -224,10 +226,30 @@ namespace EndoscopyApp.ViewModels
         {
             if (IsRecording)
             {
-                _videoService.StopRecording();
-                IsRecording = false;
-                // In a real app, we might delete the temporary file here
-                MessageBox.Show("Recording Cancelled.");
+                var result = MessageBox.Show("Are you sure you want to cancel? If you cancel, the recorded video will be deleted.", "Cancel Recording", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                
+                if (result == MessageBoxResult.Yes)
+                {
+                    _videoService.StopRecording();
+                    IsRecording = false;
+
+                    // Delete the video file
+                    if (!string.IsNullOrEmpty(_currentVideoFilePath) && File.Exists(_currentVideoFilePath))
+                    {
+                        try
+                        {
+                            // A small delay ensures the video writer releases the file lock
+                            System.Threading.Thread.Sleep(200);
+                            File.Delete(_currentVideoFilePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Failed to delete cancelled video: {ex.Message}");
+                        }
+                    }
+
+                    NotificationRequested?.Invoke("Recording Canceled");
+                }
             }
         }
 
