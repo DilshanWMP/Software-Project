@@ -89,6 +89,7 @@ namespace EndoscopyApp.Services
         }
 
         private VideoWriter? _writer;
+        private readonly object _writerLock = new object();
         public bool IsRecording { get; private set; }
 
         private double _recordedFps = 20.0;
@@ -102,12 +103,16 @@ namespace EndoscopyApp.Services
             var fourcc = VideoWriter.FourCC('M', 'J', 'P', 'G');
             var size = new Size(_capture.FrameWidth, _capture.FrameHeight);
 
-            _writer = new VideoWriter(filePath, fourcc, _recordedFps, size);
+            var writer = new VideoWriter(filePath, fourcc, _recordedFps, size);
 
-            if (_writer.IsOpened())
+            if (writer.IsOpened())
             {
-                IsRecording = true;
-                _lastWriteTime = DateTime.Now;
+                lock (_writerLock)
+                {
+                    _writer = writer;
+                    IsRecording = true;
+                    _lastWriteTime = DateTime.Now;
+                }
             }
         }
 
@@ -116,9 +121,13 @@ namespace EndoscopyApp.Services
             if (!IsRecording) return;
 
             IsRecording = false;
-            _writer?.Release();
-            _writer?.Dispose();
-            _writer = null;
+            
+            lock (_writerLock)
+            {
+                _writer?.Release();
+                _writer?.Dispose();
+                _writer = null;
+            }
         }
 
         public Mat CaptureSnapshot()
@@ -142,19 +151,25 @@ namespace EndoscopyApp.Services
                 if (_capture != null && _capture.Read(frame) && !frame.Empty())
                 {
                     // Recording - ensure we write at the correct intervals to maintain real-time speed
-                    if (IsRecording && _writer != null && _writer.IsOpened())
+                    if (IsRecording)
                     {
-                        var now = DateTime.Now;
-                        var elapsed = (now - _lastWriteTime).TotalMilliseconds;
-                        var frameInterval = 1000.0 / _recordedFps;
-
-                        // If the camera is slow, we "stuff" or duplicate frames to fill the time gap.
-                        // This prevents the video from playing back fast.
-                        while (elapsed >= frameInterval)
+                        lock (_writerLock)
                         {
-                            _writer.Write(frame);
-                            elapsed -= frameInterval;
-                            _lastWriteTime = _lastWriteTime.AddMilliseconds(frameInterval);
+                            if (IsRecording && _writer != null && _writer.IsOpened())
+                            {
+                                var now = DateTime.Now;
+                                var elapsed = (now - _lastWriteTime).TotalMilliseconds;
+                                var frameInterval = 1000.0 / _recordedFps;
+
+                                // If the camera is slow, we "stuff" or duplicate frames to fill the time gap.
+                                // This prevents the video from playing back fast.
+                                while (elapsed >= frameInterval)
+                                {
+                                    _writer.Write(frame);
+                                    elapsed -= frameInterval;
+                                    _lastWriteTime = _lastWriteTime.AddMilliseconds(frameInterval);
+                                }
+                            }
                         }
                     }
 

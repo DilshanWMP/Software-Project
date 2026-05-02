@@ -4,6 +4,8 @@ using EndoscopyApp.Models;
 using EndoscopyApp.Services;
 using System.Windows;
 using Microsoft.Win32;
+using System.Collections.ObjectModel;
+using System.IO.Ports;
 
 namespace EndoscopyApp.ViewModels
 {
@@ -37,6 +39,12 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private int _cameraIndex;
 
+        [ObservableProperty]
+        private ObservableCollection<string> _availableComPorts = new();
+
+        [ObservableProperty]
+        private string _selectedComPort = "None";
+
         public SettingsViewModel(MainViewModel mainViewModel)
         {
             _mainViewModel = mainViewModel;
@@ -46,6 +54,26 @@ namespace EndoscopyApp.ViewModels
             _currentSettings = _settingsService.LoadSettings();
             MediaPath = _currentSettings.MediaPath;
             CameraIndex = _currentSettings.CameraIndex;
+            SelectedComPort = _currentSettings.FootPedalPort;
+
+            LoadComPorts();
+        }
+
+        private void LoadComPorts()
+        {
+            AvailableComPorts.Clear();
+            AvailableComPorts.Add("None");
+            
+            var ports = SerialPort.GetPortNames();
+            foreach (var port in ports)
+            {
+                AvailableComPorts.Add(port);
+            }
+
+            if (!AvailableComPorts.Contains(SelectedComPort))
+            {
+                SelectedComPort = "None";
+            }
         }
 
         [RelayCommand]
@@ -113,6 +141,7 @@ namespace EndoscopyApp.ViewModels
 
             _currentSettings.MediaPath = MediaPath;
             _currentSettings.CameraIndex = CameraIndex;
+            _currentSettings.FootPedalPort = SelectedComPort;
 
             try
             {
