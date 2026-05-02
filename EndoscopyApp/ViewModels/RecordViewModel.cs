@@ -12,6 +12,9 @@ namespace EndoscopyApp.ViewModels
 {
     public partial class RecordViewModel : ViewModelBase
     {
+        public event Action<string>? NotificationRequested;
+        public event Action? SnapshotFlashRequested;
+
         private readonly VideoCaptureService _videoService;
         private readonly DatabaseService _dbService;
         private readonly SettingsService _settingsService;
@@ -174,7 +177,7 @@ namespace EndoscopyApp.ViewModels
             {
                 _videoService.StopRecording();
                 IsRecording = false;
-                MessageBox.Show("Recording Saved.");
+                NotificationRequested?.Invoke("Recording Saved");
             }
             else
             {
@@ -246,7 +249,8 @@ namespace EndoscopyApp.ViewModels
                 string filePath = Path.Combine(patientDir, fileName);
 
                 frame.SaveImage(filePath);
-                MessageBox.Show("Snapshot Saved.");
+                SnapshotFlashRequested?.Invoke();
+                NotificationRequested?.Invoke("Snapshot Saved");
 
                 // Save metadata to DB
             }
