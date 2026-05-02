@@ -14,6 +14,7 @@ namespace EndoscopyApp.ViewModels
     {
         private readonly MainViewModel _mainViewModel;
         private readonly DatabaseService _dbService;
+        private readonly MLModelService _mlService;
 
         [ObservableProperty]
         private Patient _patient;
@@ -32,6 +33,7 @@ namespace EndoscopyApp.ViewModels
             _mainViewModel = mainViewModel;
             _patient = patient;
             _dbService = new DatabaseService();
+            _mlService = new MLModelService();
             LoadMedia();
         }
 
@@ -135,6 +137,28 @@ namespace EndoscopyApp.ViewModels
             if (File.Exists(media.FilePath))
             {
                 _mainViewModel.NavigateToMediaViewer(media, Patient);
+            }
+        }
+
+        [RelayCommand]
+        private void AnalyseMedia(MediaFileViewModel media)
+        {
+            if (!File.Exists(media.FilePath)) return;
+
+            if (!_mlService.IsLoaded)
+            {
+                MessageBox.Show("ML Model is not loaded or missing. Ensure 'best.onnx' is in the CNN model folder.", "Model Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var result = _mlService.AnalyseImage(media.FilePath);
+            if (result != null)
+            {
+                MessageBox.Show($"AI Analysis Result:\n\n{result.Value.prediction}", "Analysis Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                MessageBox.Show("Failed to analyse the image.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

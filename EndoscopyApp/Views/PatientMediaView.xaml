@@ -184,7 +184,13 @@
                                                                         <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.15" Color="Black"/>
                                                                     </Border.Effect>
                                                                     <StackPanel Width="140">
-                                                                        <Button Command="{Binding DataContext.DownloadMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#2D3748" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42">
+                                                                        <Button Command="{Binding DataContext.AnalyseMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#2D3748" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42">
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <materialDesign:PackIcon Kind="Microscope" Margin="0,0,12,0" Foreground="#805AD5" VerticalAlignment="Center" Width="20" Height="20"/>
+                                                                                <TextBlock Text="Analyse" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="14"/>
+                                                                            </StackPanel>
+                                                                        </Button>
+                                                                        <Button Command="{Binding DataContext.DownloadMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#2D3748" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42" Margin="0,2,0,0">
                                                                             <StackPanel Orientation="Horizontal">
                                                                                 <materialDesign:PackIcon Kind="Download" Margin="0,0,12,0" Foreground="#3182CE" VerticalAlignment="Center" Width="20" Height="20"/>
                                                                                 <TextBlock Text="Download" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="14"/>
