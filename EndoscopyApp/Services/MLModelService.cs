@@ -15,8 +15,8 @@ namespace EndoscopyApp.Services
         private int _inputWidth = 640;
         private string _inputName = "";
 
-        // Default classes based on standard endoscopy findings
-        private readonly Dictionary<int, string> _classes = new()
+        // Default classes (will be overwritten if ONNX contains metadata)
+        private Dictionary<int, string> _classes = new()
         {
             { 0, "Healthy" },
             { 1, "Polyp" },
@@ -47,6 +47,23 @@ namespace EndoscopyApp.Services
                         var w = inputMeta.Value.Dimensions[3];
                         if (h > 0) _inputHeight = h;
                         if (w > 0) _inputWidth = w;
+                    }
+
+                    // Attempt to extract class names from metadata
+                    if (_session.ModelMetadata.CustomMetadataMap.TryGetValue("names", out string namesJson))
+                    {
+                        // Simple parser for "{0: 'name', 1: 'name'}"
+                        namesJson = namesJson.Replace("{", "").Replace("}", "").Replace("'", "").Replace("\"", "");
+                        var pairs = namesJson.Split(',');
+                        _classes.Clear();
+                        foreach (var pair in pairs)
+                        {
+                            var parts = pair.Split(':');
+                            if (parts.Length == 2 && int.TryParse(parts[0].Trim(), out int id))
+                            {
+                                _classes[id] = parts[1].Trim();
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -98,20 +115,16 @@ namespace EndoscopyApp.Services
                 // YOLO Classification [1, num_classes]
                 if (outputTensor.Dimensions.Length == 2)
                 {
-                    int bestClass = -1;
-                    float bestScore = -1f;
-
+                    var allScores = new List<(string Name, float Score)>();
                     for (int i = 0; i < outputTensor.Dimensions[1]; i++)
                     {
-                        if (outputTensor[0, i] > bestScore)
-                        {
-                            bestScore = outputTensor[0, i];
-                            bestClass = i;
-                        }
+                        string cName = _classes.ContainsKey(i) ? _classes[i] : $"Class {i}";
+                        allScores.Add((cName, outputTensor[0, i]));
                     }
 
-                    string className = _classes.ContainsKey(bestClass) ? _classes[bestClass] : $"Class {bestClass}";
-                    return (className, bestScore);
+                    var sortedScores = allScores.OrderByDescending(x => x.Score).ToList();
+                    var lines = sortedScores.Select(x => $"{x.Name}: {(x.Score * 100).ToString("0.0")}%");
+                    return (string.Join("\n", lines), sortedScores.First().Score);
                 }
                 // YOLO Detection [1, 4 + classes, 8400]
                 else if (outputTensor.Dimensions.Length == 3)
@@ -119,9 +132,8 @@ namespace EndoscopyApp.Services
                     int numClasses = outputTensor.Dimensions[1] - 4;
                     int numAnchors = outputTensor.Dimensions[2];
                     
-                    // Keep track of the highest score for EACH class
-                    var classScores = new float[numClasses];
-
+                    // Find max score for EACH class
+                    var allScores = new List<(string Name, float Score)>();
                     for (int c = 0; c < numClasses; c++)
                     {
                         float maxScoreForClass = 0f;
@@ -133,31 +145,13 @@ namespace EndoscopyApp.Services
                                 maxScoreForClass = score;
                             }
                         }
-                        classScores[c] = maxScoreForClass;
+                        string cName = _classes.ContainsKey(c) ? _classes[c] : $"Class {c}";
+                        allScores.Add((cName, maxScoreForClass));
                     }
 
-                    // Collect all classes that cross a reasonable threshold (e.g. 0.3)
-                    float threshold = 0.3f;
-                    var detectedIllnesses = new List<string>();
-                    
-                    for (int c = 0; c < numClasses; c++)
-                    {
-                        if (classScores[c] > threshold)
-                        {
-                            string cName = _classes.ContainsKey(c) ? _classes[c] : $"Class {c}";
-                            detectedIllnesses.Add($"{cName} ({(classScores[c] * 100).ToString("0.0")}%)");
-                        }
-                    }
-
-                    if (detectedIllnesses.Count > 0)
-                    {
-                        // Return the combined string of all detected illnesses
-                        return (string.Join(", ", detectedIllnesses), classScores.Max());
-                    }
-                    else
-                    {
-                        return ("Healthy (No abnormalities detected)", 1.0f);
-                    }
+                    var sortedScores = allScores.OrderByDescending(x => x.Score).ToList();
+                    var lines = sortedScores.Select(x => $"{x.Name}: {(x.Score * 100).ToString("0.0")}%");
+                    return (string.Join("\n", lines), sortedScores.First().Score);
                 }
                 
                 return ("Unknown Model Format", 0f);
