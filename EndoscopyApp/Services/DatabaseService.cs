@@ -52,7 +52,7 @@ namespace EndoscopyApp.Services
             ";
             command.ExecuteNonQuery();
 
-            // Migration: Check if Nic column exists (for older versions)
+            
             try
             {
                 command.CommandText = "ALTER TABLE Patients ADD COLUMN Nic TEXT;";
@@ -60,7 +60,7 @@ namespace EndoscopyApp.Services
             }
             catch { /* Ignore if exists */ }
 
-            // Migration: Check if Notes column exists
+            
             try
             {
                 command.CommandText = "ALTER TABLE Patients ADD COLUMN Notes TEXT;";
