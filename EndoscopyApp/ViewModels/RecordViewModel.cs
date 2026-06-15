@@ -221,6 +221,7 @@ namespace EndoscopyApp.ViewModels
         [RelayCommand]
         public void NavigateBack()
         {
+            Cleanup();
             _mainViewModel?.NavigateToHome();
         }
 
@@ -258,7 +259,16 @@ namespace EndoscopyApp.ViewModels
 
         public void Cleanup()
         {
+            if (IsRecording)
+            {
+                _videoService.StopRecording();
+                IsRecording = false;
+            }
+
+            if (!IsCameraRunning) return;
+
             _videoService.Stop();
+            IsCameraRunning = false;
             _videoService.Dispose();
         }
     }

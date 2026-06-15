@@ -73,6 +73,15 @@ namespace EndoscopyApp.ViewModels
 
         public void NavigateTo(ViewModelBase viewModel)
         {
+            if (CurrentViewModel is LiveViewModel liveViewModel)
+            {
+                liveViewModel.Cleanup();
+            }
+            else if (CurrentViewModel is RecordViewModel recordViewModel)
+            {
+                recordViewModel.Cleanup();
+            }
+
             CurrentViewModel = viewModel;
 
             // Hide sidebar for most views to maximize workspace
