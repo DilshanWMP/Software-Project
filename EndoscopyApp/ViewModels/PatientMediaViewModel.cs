@@ -7,6 +7,8 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Threading.Tasks;
+using OpenCvSharp;
 
 namespace EndoscopyApp.ViewModels
 {
@@ -14,6 +16,7 @@ namespace EndoscopyApp.ViewModels
     {
         private readonly MainViewModel _mainViewModel;
         private readonly DatabaseService _dbService;
+        private readonly ModelInferenceService _modelService;
 
         [ObservableProperty]
         private Patient _patient;
@@ -32,6 +35,7 @@ namespace EndoscopyApp.ViewModels
             _mainViewModel = mainViewModel;
             _patient = patient;
             _dbService = new DatabaseService();
+            _modelService = new ModelInferenceService();
             LoadMedia();
         }
 
@@ -135,6 +139,112 @@ namespace EndoscopyApp.ViewModels
             if (File.Exists(media.FilePath))
             {
                 _mainViewModel.NavigateToMediaViewer(media, Patient);
+            }
+        }
+
+        [RelayCommand]
+        private async Task AnalyzeMedia(MediaFileViewModel media)
+        {
+            if (!File.Exists(media.FilePath))
+            {
+                MessageBox.Show("Image file not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (!media.IsVideo) // Only analyze snapshots (images)
+            {
+                string resultMessage = "";
+
+                try
+                {
+                    // Run entire analysis on background thread - don't wait for it on UI thread
+                    await Task.Run(async () =>
+                    {
+                        try
+                        {
+                            // Initialize model if not already done
+                            if (!_modelService.IsInitialized)
+                            {
+                                await _modelService.Initialize();
+                            }
+
+                            // Load image
+                            using var image = OpenCvSharp.Cv2.ImRead(media.FilePath);
+                            if (image.Empty())
+                            {
+                                resultMessage = "ERROR: Failed to load image.";
+                                return;
+                            }
+
+                            // Run inference
+                            var detections = await _modelService.RunInference(image);
+
+                            if (detections.Count > 0)
+                            {
+                                // Draw bounding boxes on the image
+                                var resultImage = image.Clone();
+                                foreach (var detection in detections)
+                                {
+                                    int x1 = (int)(detection.X * resultImage.Width);
+                                    int y1 = (int)(detection.Y * resultImage.Height);
+                                    int x2 = (int)((detection.X + detection.Width) * resultImage.Width);
+                                    int y2 = (int)((detection.Y + detection.Height) * resultImage.Height);
+
+                                    // Draw rectangle
+                                    OpenCvSharp.Cv2.Rectangle(resultImage, new OpenCvSharp.Point(x1, y1), new OpenCvSharp.Point(x2, y2), new OpenCvSharp.Scalar(0, 255, 0), 2);
+
+                                    // Draw confidence score
+                                    string label = $"Conf: {detection.Confidence:F2}";
+                                    OpenCvSharp.Cv2.PutText(resultImage, label, new OpenCvSharp.Point(x1, y1 - 5),
+                                        0, 0.5, new OpenCvSharp.Scalar(0, 255, 0), 2);
+                                }
+
+                                // Save analyzed image
+                                string analyzedPath = Path.Combine(Path.GetDirectoryName(media.FilePath) ?? AppDomain.CurrentDomain.BaseDirectory, 
+                                    Path.GetFileNameWithoutExtension(media.FilePath) + "_analyzed.jpg");
+                                resultImage.SaveImage(analyzedPath);
+
+                                resultMessage = $"Analysis complete!\n\nDetections found: {detections.Count}\n\n";
+                                for (int i = 0; i < detections.Count; i++)
+                                {
+                                    resultMessage += $"Detection {i + 1}:\n" +
+                                        $"  Confidence: {detections[i].Confidence:F2}\n" +
+                                        $"  Class ID: {detections[i].ClassId}\n" +
+                                        $"  Position: ({detections[i].X:F2}, {detections[i].Y:F2})\n\n";
+                                }
+
+                                resultMessage += $"Analyzed image saved to:\n{analyzedPath}";
+                                resultImage.Dispose();
+                            }
+                            else
+                            {
+                                resultMessage = "No detections found in the image.";
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            resultMessage = $"ERROR: {ex.Message}";
+                        }
+                    });
+
+                    // Show result on UI thread after background work is complete
+                    if (resultMessage.StartsWith("ERROR:"))
+                    {
+                        MessageBox.Show(resultMessage.Replace("ERROR: ", ""), "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                    else if (resultMessage.Length > 0)
+                    {
+                        MessageBox.Show(resultMessage, "Analysis Results", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Analysis failed: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Analysis is only available for images, not videos.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
     }

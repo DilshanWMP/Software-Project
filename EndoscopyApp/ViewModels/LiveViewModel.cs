@@ -12,6 +12,7 @@ namespace EndoscopyApp.ViewModels
         private readonly VideoCaptureService _videoService;
         private readonly MainViewModel? _mainViewModel;
         private readonly SettingsService _settingsService;
+        private readonly ModelInferenceService _modelService;
         private AppSettings _settings;
 
         [ObservableProperty]
@@ -20,12 +21,19 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private bool _isCameraRunning;
 
+        [ObservableProperty]
+        private bool _isModelEnabled;
+
+        [ObservableProperty]
+        private string _inferenceStatus = "Model not loaded";
+
         public LiveViewModel()
         {
             _videoService = new VideoCaptureService();
             _videoService.FrameReady += OnFrameReady;
             _settingsService = new SettingsService();
             _settings = _settingsService.LoadSettings();
+            _modelService = new ModelInferenceService();
         }
 
         public LiveViewModel(MainViewModel mainViewModel) : this()
@@ -50,6 +58,32 @@ namespace EndoscopyApp.ViewModels
                     _isRendering = false;
                 }
             }, System.Windows.Threading.DispatcherPriority.Render);
+        }
+
+        [RelayCommand]
+        public async Task EnableModel()
+        {
+            if (IsModelEnabled) return;
+
+            try
+            {
+                InferenceStatus = "Loading model...";
+                await _modelService.Initialize();
+                IsModelEnabled = _modelService.IsInitialized;
+                InferenceStatus = IsModelEnabled ? "Model ready" : "Failed to load model";
+            }
+            catch (Exception ex)
+            {
+                InferenceStatus = $"Error: {ex.Message}";
+                System.Windows.MessageBox.Show($"Model Loading Error: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        public void DisableModel()
+        {
+            IsModelEnabled = false;
+            InferenceStatus = "Model disabled";
         }
 
         [RelayCommand]

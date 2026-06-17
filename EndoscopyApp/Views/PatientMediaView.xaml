@@ -190,6 +190,12 @@
                                                                                 <TextBlock Text="Download" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="14"/>
                                                                             </StackPanel>
                                                                         </Button>
+                                                                        <Button Command="{Binding DataContext.AnalyzeMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#2D7A00" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42" Margin="0,2,0,0">
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <materialDesign:PackIcon Kind="Brain" Margin="0,0,12,0" Foreground="#2D7A00" VerticalAlignment="Center" Width="20" Height="20"/>
+                                                                                <TextBlock Text="Analyse" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="14"/>
+                                                                            </StackPanel>
+                                                                        </Button>
                                                                         <Button Command="{Binding DataContext.DeleteMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#E53E3E" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42" Margin="0,2,0,0">
                                                                             <StackPanel Orientation="Horizontal">
                                                                                 <materialDesign:PackIcon Kind="TrashCanOutline" Margin="0,0,12,0" Foreground="#E53E3E" VerticalAlignment="Center" Width="20" Height="20"/>
