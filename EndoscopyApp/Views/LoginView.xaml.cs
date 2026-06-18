@@ -26,7 +26,7 @@ namespace EndoscopyApp.Views
             {
                 if (DataContext is LoginViewModel vm && !vm.IsPasswordVisible)
                 {
-                    // Sync PasswordBox when switching from visible text back to masked
+                    
                     UserPasswordBox.Password = vm.Password;
                 }
             }
@@ -48,6 +48,7 @@ namespace EndoscopyApp.Views
                 e.Handled = true;
             }
         }
+        //WPF C# event handler
 
         private void TextBox_KeyDown(object sender, KeyEventArgs e)
         {
