@@ -29,12 +29,14 @@
                                  materialDesign:HintAssist.Hint="Enter password"
                                  Style="{StaticResource MaterialDesignFloatingHintPasswordBox}"
                                  PasswordChanged="PasswordBox_PasswordChanged"
+                                 KeyDown="PasswordBox_KeyDown"
                                  Padding="0,5"
                                  Visibility="{Binding IsPasswordVisible, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
                     
                     <TextBox Text="{Binding Password}" 
                              materialDesign:HintAssist.Hint="Enter password"
                              Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                             KeyDown="TextBox_KeyDown"
                              Padding="0,5"
                              Visibility="{Binding IsPasswordVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     

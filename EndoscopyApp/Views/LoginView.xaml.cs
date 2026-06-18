@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows.Input;
 using EndoscopyApp.ViewModels;
 
 namespace EndoscopyApp.Views
@@ -25,7 +26,7 @@ namespace EndoscopyApp.Views
             {
                 if (DataContext is LoginViewModel vm && !vm.IsPasswordVisible)
                 {
-                    // Sync PasswordBox when switching from visible text back to masked
+                    
                     UserPasswordBox.Password = vm.Password;
                 }
             }
@@ -36,6 +37,25 @@ namespace EndoscopyApp.Views
             if (this.DataContext is LoginViewModel viewModel)
             {
                 viewModel.Password = ((PasswordBox)sender).Password;
+            }
+        }
+
+        private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return && this.DataContext is LoginViewModel viewModel)
+            {
+                viewModel.LoginCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+        //WPF C# event handler
+
+        private void TextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return && this.DataContext is LoginViewModel viewModel)
+            {
+                viewModel.LoginCommand.Execute(null);
+                e.Handled = true;
             }
         }
     }
