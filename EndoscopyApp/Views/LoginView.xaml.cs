@@ -1,4 +1,5 @@
 using System.Windows.Controls;
+using System.Windows.Input;
 using EndoscopyApp.ViewModels;
 
 namespace EndoscopyApp.Views
@@ -36,6 +37,24 @@ namespace EndoscopyApp.Views
             if (this.DataContext is LoginViewModel viewModel)
             {
                 viewModel.Password = ((PasswordBox)sender).Password;
+            }
+        }
+
+        private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return && this.DataContext is LoginViewModel viewModel)
+            {
+                viewModel.LoginCommand.Execute(null);
+                e.Handled = true;
+            }
+        }
+
+        private void TextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Return && this.DataContext is LoginViewModel viewModel)
+            {
+                viewModel.LoginCommand.Execute(null);
+                e.Handled = true;
             }
         }
     }
