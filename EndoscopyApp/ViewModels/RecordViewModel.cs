@@ -7,6 +7,10 @@ using System.IO;
 using System;
 using System.Windows;
 using System.Collections.ObjectModel;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace EndoscopyApp.ViewModels
 {
@@ -21,6 +25,8 @@ namespace EndoscopyApp.ViewModels
         private readonly MainViewModel? _mainViewModel;
         private Patient? _currentPatient;
         private AppSettings _settings;
+        private string? _currentRecordingPath;
+        private static readonly HttpClient _httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:5673/") };
 
         [ObservableProperty]
         private string _patientName = "";
@@ -177,7 +183,11 @@ namespace EndoscopyApp.ViewModels
             {
                 _videoService.StopRecording();
                 IsRecording = false;
-                NotificationRequested?.Invoke("Recording Saved");
+                NotificationRequested?.Invoke("Recording Saved. Uploading to AI server...");
+                if (!string.IsNullOrEmpty(_currentRecordingPath))
+                {
+                    _ = UploadAndProcessVideoAsync(_currentRecordingPath);
+                }
             }
             else
             {
@@ -190,6 +200,7 @@ namespace EndoscopyApp.ViewModels
                 Directory.CreateDirectory(patientDir);
                 string fileName = $"REC_{DateTime.Now:yyyyMMdd_HHmmss}.avi";
                 string filePath = Path.Combine(patientDir, fileName);
+                _currentRecordingPath = filePath;
 
                 _videoService.StartRecording(filePath);
                 IsRecording = true;
@@ -254,6 +265,85 @@ namespace EndoscopyApp.ViewModels
                 NotificationRequested?.Invoke("Snapshot Saved");
 
                 // Save metadata to DB
+            }
+        }
+
+        private async Task UploadAndProcessVideoAsync(string filePath)
+        {
+            try
+            {
+                using var form = new MultipartFormDataContent();
+                using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+                using var fileContent = new StreamContent(fileStream);
+                
+                var contentType = "video/mp4";
+                if (filePath.EndsWith(".avi", StringComparison.OrdinalIgnoreCase)) contentType = "video/x-msvideo";
+                
+                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+                form.Add(fileContent, "file", Path.GetFileName(filePath));
+
+                var response = await _httpClient.PostAsync("api/videos/upload", form);
+                response.EnsureSuccessStatusCode();
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var jsonDoc = JsonDocument.Parse(responseString);
+                var videoId = jsonDoc.RootElement.GetProperty("videoId").GetString();
+
+                if (!string.IsNullOrEmpty(videoId))
+                {
+                    NotificationRequested?.Invoke("Upload complete. AI Processing started in background.");
+                    _ = PollStatusAsync(videoId);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show($"Failed to upload video for processing: {ex.Message}");
+                });
+            }
+        }
+
+        private async Task PollStatusAsync(string videoId)
+        {
+            bool processing = true;
+            while (processing)
+            {
+                await Task.Delay(5000); // Poll every 5 seconds
+                
+                try
+                {
+                    var response = await _httpClient.GetAsync($"api/videos/{videoId}/status");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        using var jsonDoc = JsonDocument.Parse(responseString);
+                        var status = jsonDoc.RootElement.GetProperty("status").GetString();
+
+                        if (status == "completed")
+                        {
+                            var detectedClasses = jsonDoc.RootElement.TryGetProperty("detectedClasses", out var dc) ? dc.GetString() : "None";
+                            processing = false;
+                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                NotificationRequested?.Invoke("AI Processing Completed!");
+                                MessageBox.Show($"The video processing has completed and results are ready.\n\nAI Detected: {detectedClasses}", "Processing Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                            });
+                        }
+                        else if (status == "failed")
+                        {
+                            processing = false;
+                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                NotificationRequested?.Invoke("AI Processing Failed!");
+                            });
+                        }
+                    }
+                }
+                catch (Exception)
+                {
+                    // Silently ignore polling errors and retry
+                }
             }
         }
 

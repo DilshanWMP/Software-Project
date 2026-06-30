@@ -137,6 +137,86 @@ namespace EndoscopyApp.ViewModels
                 _mainViewModel.NavigateToMediaViewer(media, Patient);
             }
         }
+
+        private static readonly System.Net.Http.HttpClient _httpClient = new System.Net.Http.HttpClient { BaseAddress = new System.Uri("http://localhost:5673/") };
+
+        [RelayCommand]
+        private async System.Threading.Tasks.Task AnalyseMedia(MediaFileViewModel media)
+        {
+            if (!File.Exists(media.FilePath)) return;
+
+            try
+            {
+                using var form = new System.Net.Http.MultipartFormDataContent();
+                using var fileStream = new FileStream(media.FilePath, FileMode.Open, FileAccess.Read);
+                using var fileContent = new System.Net.Http.StreamContent(fileStream);
+                
+                var contentType = media.IsVideo ? "video/mp4" : "image/jpeg";
+                fileContent.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse(contentType);
+                form.Add(fileContent, "file", Path.GetFileName(media.FilePath));
+
+                // Same upload endpoint for both right now
+                var response = await _httpClient.PostAsync("api/videos/upload", form);
+                response.EnsureSuccessStatusCode();
+
+                var responseString = await response.Content.ReadAsStringAsync();
+                using var jsonDoc = System.Text.Json.JsonDocument.Parse(responseString);
+                var videoId = jsonDoc.RootElement.GetProperty("videoId").GetString();
+
+                if (!string.IsNullOrEmpty(videoId))
+                {
+                    MessageBox.Show("Image/Video upload complete. AI Processing started in background.", "Analysis Started", MessageBoxButton.OK, MessageBoxImage.Information);
+                    // Start polling
+                    _ = PollStatusAsync(videoId);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Failed to upload media for processing: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async System.Threading.Tasks.Task PollStatusAsync(string videoId)
+        {
+            bool processing = true;
+            while (processing)
+            {
+                await System.Threading.Tasks.Task.Delay(5000);
+                
+                try
+                {
+                    var response = await _httpClient.GetAsync($"api/videos/{videoId}/status");
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseString = await response.Content.ReadAsStringAsync();
+                        using var jsonDoc = System.Text.Json.JsonDocument.Parse(responseString);
+                        var status = jsonDoc.RootElement.GetProperty("status").GetString();
+
+                        if (status == "completed")
+                        {
+                            var detectedClasses = jsonDoc.RootElement.TryGetProperty("detectedClasses", out var dc) ? dc.GetString() : "None";
+                            processing = false;
+                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                MessageBox.Show($"The media processing has completed and results are ready in the results folder.\n\nAI Detected: {detectedClasses}", "Processing Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+                            });
+                        }
+                        else if (status == "failed")
+                        {
+                            processing = false;
+                            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                MessageBox.Show("AI Processing Failed!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            });
+                        }
+                    }
+                }
+                catch (System.Exception)
+                {
+                    // Ignore and retry
+                }
+            }
+        }
     }
 
     public partial class MediaFileViewModel : ObservableObject
