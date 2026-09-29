@@ -1,0 +1,500 @@
+# Predictions Screen: CNN Anomaly Detection for Laparoscopy Snapshots
+
+A step-by-step guide to adding a **Predictions** screen to your desktop application, where a doctor uploads a snapshot and a CNN highlights and labels possible abnormalities.
+
+> **Important:** This is a decision-support feature. It must be presented as "suggested findings for clinician review", never as a diagnosis. If the software will be used on real patients, it becomes medical device software (regulatory approval such as CE/FDA/local authority, clinical validation, and data-protection compliance are required). For a student/prototype project, label it clearly as a research prototype.
+
+---
+
+## 1. Decide what "detect anomalies" means (do this first)
+
+The model type depends on what output you want. Pick one level and build up.
+
+| Level | Task | Output | Difficulty | Data needed |
+|---|---|---|---|---|
+| 1 | **Image classification** | "Image shows: normal / endometriosis / inflammation..." + confidence | Easy | Image-level labels |
+| 2 | **Classification + heatmap (Grad-CAM)** | Same as above + a heatmap showing *where* the model looked | Easy-Medium | Same as level 1 (no extra labels) |
+| 3 | **Object detection (YOLO)** | Bounding boxes around each anomaly + label | Medium | Bounding box annotations |
+| 4 | **Segmentation (U-Net)** | Pixel-level mask of the anomaly | Hard | Pixel-level masks |
+
+**Recommendation:** Start with **Level 2** (classifier + Grad-CAM). It satisfies "point out the anomaly" without expensive annotation. Move to Level 3 only if you get box-annotated data.
+
+You also need to decide **which anomaly/procedure** you target (e.g., gynecologic laparoscopy findings, cholecystectomy findings). A model can't be "generally abnormal-aware"; it needs a defined label set. Write your class list down before anything else, e.g.:
+
+```
+normal
+endometriosis_lesion
+adhesion
+inflammation
+other_abnormal
+```
+
+---
+
+## 2. Build vs. use a pre-trained model: the answer
+
+**Do not train a CNN from scratch.** Use **transfer learning**: take a CNN pre-trained on ImageNet and fine-tune it on your laparoscopy images.
+
+| Option | Verdict |
+|---|---|
+| Train from scratch | Needs 100k+ images and lots of compute. Bad idea. |
+| Use a ready-made model as-is | No good general "laparoscopy anomaly" model exists that you can trust for your label set. |
+| **Fine-tune a pre-trained CNN** | **Best.** Works with a few thousand images, trains on a free GPU (Google Colab / Kaggle). |
+
+Good backbones to fine-tune:
+
+- **ResNet-50**: reliable baseline, easy Grad-CAM.
+- **EfficientNet-B0 / B2**: better accuracy for size.
+- **ConvNeXt-Tiny**: modern, strong.
+- **MobileNetV3**: if the desktop app must run on weak hardware without GPU.
+
+Start with **EfficientNet-B0 or ResNet-50**.
+
+---
+
+## 3. Get free laparoscopy images
+
+Always check each dataset's license and access terms. Some need a registration or data-use agreement, and licenses can change. Most are **research/non-commercial only**.
+
+| Dataset | Content | Good for |
+|---|---|---|
+| **GLENDA** (Gynecologic Laparoscopy ENdometriosis DAtaset) | Gynecologic laparoscopy images with endometriosis lesion annotations, plus normal images | **Best fit for real "abnormality" labels** |
+| **LapGyn4** | 4 subsets of gynecologic laparoscopy images (anatomy, actions, surgical actions, instrument counts) | Extra normal/context images, pretraining |
+| **Cholec80** | 80 cholecystectomy videos with tool and phase labels | Large volume of frames, pretraining |
+| **CholecSeg8k** | Frames from Cholec80 with pixel masks of organs/tools | Segmentation practice |
+| **Endoscapes / Endoscapes2023** | Cholecystectomy frames with segmentation and safety-view assessment | Segmentation/detection |
+| **HeiChole** | Cholecystectomy video with phases, tools, actions | Frames for pretraining |
+| **m2cai16-tool / m2cai16-workflow** | Cholecystectomy tool and phase data | Tool presence, extra frames |
+| **SurgicalActions160** | Gynecologic laparoscopy action clips | Action recognition |
+| **EndoVis challenges (MICCAI)** | Instrument segmentation, scene understanding | Segmentation |
+| **Kvasir / Kvasir-SEG** | GI endoscopy (not laparoscopy) with polyps and lesion masks | Practicing the abnormality-detection pipeline, since it has real lesion labels |
+
+Where to look:
+- Dataset home pages (search the dataset name; e.g., GLENDA and LapGyn4 are hosted by ITEC, University of Klagenfurt).
+- **Kaggle**, **Zenodo**, **Synapse**, **Papers with Code → Datasets**, **Hugging Face Datasets**.
+- Search phrases: "laparoscopy dataset", "surgical video dataset", "endometriosis laparoscopy images".
+
+**Reality check:** Most public laparoscopy datasets label *tools, phases, and anatomy*, not *pathology*. Real abnormality labels are scarcer (GLENDA is the main one). Plan for this:
+
+1. Use GLENDA (or another labeled pathology set) for your actual classes.
+2. Use the big datasets (Cholec80, LapGyn4) for **normal** samples or for a first-stage pretraining.
+3. Later, add **your own app's snapshots**, labeled by a doctor. This is what makes the model good for *your* camera and lighting.
+
+**Data privacy:** If you use snapshots from your own application, they are patient data. Get ethics approval and consent, strip all metadata (EXIF/DICOM tags), and crop out any on-screen patient info/overlays.
+
+---
+
+## 4. Overall architecture
+
+```
+┌─────────────────────────┐        ┌────────────────────────────┐
+│  Desktop App            │        │  Inference Service         │
+│  ┌───────────────────┐  │  HTTP  │  (FastAPI + ONNX Runtime)  │
+│  │ Predictions screen│──┼───────►│  - preprocess              │
+│  │ - Upload image    │  │  JSON  │  - CNN forward pass        │
+│  │ - Run analysis    │◄─┼────────│  - Grad-CAM heatmap        │
+│  │ - Overlay results │  │        │  - return labels + overlay │
+│  └───────────────────┘  │        └────────────────────────────┘
+└─────────────────────────┘
+```
+
+Two ways to integrate the model:
+
+| Approach | Pros | Cons |
+|---|---|---|
+| **A. Local inference service** (FastAPI running on the same machine or LAN) | Easiest; keep Python for ML; works with any desktop language; easy updates | Need to start/stop the service with the app |
+| **B. ONNX model embedded directly in the desktop app** (ONNX Runtime has C#, C++, Java, JS bindings) | Single installer, no Python at runtime, works offline | Grad-CAM is harder to embed; more integration work |
+
+**Recommendation:** Build with **Approach A first**. Export to ONNX anyway, so you can move to Approach B later. For a hospital setting, keep inference **on-premises/offline**; do not send patient images to a public cloud.
+
+---
+
+## 5. Step-by-step implementation plan
+
+### Phase 0: Setup (Day 1)
+
+1. Create a Python 3.10+ environment.
+2. Install:
+   ```bash
+   pip install torch torchvision timm albumentations scikit-learn pandas matplotlib \
+               opencv-python grad-cam onnx onnxruntime fastapi uvicorn python-multipart
+   ```
+3. Use **Google Colab** or **Kaggle Notebooks** (free GPU) for training.
+4. Suggested project layout:
+   ```
+   lap-predictions/
+   ├── data/
+   │   ├── raw/            # downloaded datasets
+   │   └── processed/      # train/val/test folders
+   ├── notebooks/
+   ├── src/
+   │   ├── dataset.py
+   │   ├── train.py
+   │   ├── evaluate.py
+   │   ├── gradcam.py
+   │   └── export_onnx.py
+   ├── service/
+   │   └── main.py         # FastAPI app
+   ├── models/             # saved weights
+   └── README.md
+   ```
+
+### Phase 1: Data preparation (Days 2-4)
+
+1. Download your chosen datasets (Section 3).
+2. **Define the label set** (Section 1) and map every source dataset's labels into it.
+3. If you have videos, extract frames (1 frame per second is usually plenty, since consecutive frames are near-identical):
+   ```bash
+   ffmpeg -i video.mp4 -vf fps=1 frames/vid001_%05d.jpg
+   ```
+4. **Clean the data:** remove blurry, black, or smoke-filled frames if they aren't meaningful; crop the black borders that laparoscopy footage has.
+5. **Split by patient/video, NOT by image.** Frames from the same video are nearly identical. If they land in both train and test sets, your accuracy will look great and be fake (data leakage). Use:
+   - Train 70% / Validation 15% / Test 15%, split by **patient or video ID**.
+6. Arrange into folders:
+   ```
+   data/processed/train/normal/*.jpg
+   data/processed/train/endometriosis_lesion/*.jpg
+   data/processed/val/...
+   data/processed/test/...
+   ```
+7. Check **class balance**. Abnormal classes will be much rarer. Handle it with class weights or weighted sampling (see training code).
+
+### Phase 2: Train the model (Days 5-8)
+
+**Dataset and augmentations** (`src/dataset.py`):
+
+```python
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+from torchvision.datasets import ImageFolder
+import numpy as np
+from PIL import Image
+
+IMG_SIZE = 224  # 256/320 for finer lesions if GPU allows
+MEAN, STD = (0.485, 0.456, 0.406), (0.229, 0.224, 0.225)
+
+train_tf = A.Compose([
+    A.Resize(IMG_SIZE, IMG_SIZE),
+    A.HorizontalFlip(p=0.5),
+    A.VerticalFlip(p=0.2),
+    A.Rotate(limit=25, p=0.5),
+    A.RandomBrightnessContrast(p=0.5),
+    A.HueSaturationValue(hue_shift_limit=5, sat_shift_limit=20, val_shift_limit=20, p=0.4),
+    A.GaussianBlur(p=0.2),
+    A.Normalize(MEAN, STD),
+    ToTensorV2(),
+])
+val_tf = A.Compose([A.Resize(IMG_SIZE, IMG_SIZE), A.Normalize(MEAN, STD), ToTensorV2()])
+
+class AlbImageFolder(ImageFolder):
+    def __init__(self, root, transform):
+        super().__init__(root)
+        self.tf = transform
+    def __getitem__(self, i):
+        path, y = self.samples[i]
+        img = np.array(Image.open(path).convert("RGB"))
+        return self.tf(image=img)["image"], y
+```
+
+**Training script** (`src/train.py`), transfer learning in two stages:
+
+```python
+import torch, timm, numpy as np
+from torch import nn
+from torch.utils.data import DataLoader, WeightedRandomSampler
+from sklearn.metrics import classification_report
+from dataset import AlbImageFolder, train_tf, val_tf
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+train_ds = AlbImageFolder("data/processed/train", train_tf)
+val_ds   = AlbImageFolder("data/processed/val", val_tf)
+num_classes = len(train_ds.classes)
+
+# Handle class imbalance
+targets = np.array([y for _, y in train_ds.samples])
+class_counts = np.bincount(targets)
+weights = (1.0 / class_counts)[targets]
+sampler = WeightedRandomSampler(weights, len(weights), replacement=True)
+
+train_dl = DataLoader(train_ds, batch_size=32, sampler=sampler, num_workers=2)
+val_dl   = DataLoader(val_ds, batch_size=32, shuffle=False, num_workers=2)
+
+model = timm.create_model("efficientnet_b0", pretrained=True, num_classes=num_classes).to(device)
+criterion = nn.CrossEntropyLoss()
+
+def run_epoch(dl, train=False, opt=None):
+    model.train(train)
+    losses, preds, gts = [], [], []
+    for x, y in dl:
+        x, y = x.to(device), y.to(device)
+        with torch.set_grad_enabled(train):
+            out = model(x)
+            loss = criterion(out, y)
+            if train:
+                opt.zero_grad(); loss.backward(); opt.step()
+        losses.append(loss.item())
+        preds += out.argmax(1).cpu().tolist(); gts += y.cpu().tolist()
+    return np.mean(losses), preds, gts
+
+# Stage 1: train only the classifier head (backbone frozen)
+for p in model.parameters(): p.requires_grad = False
+for p in model.get_classifier().parameters(): p.requires_grad = True
+opt = torch.optim.AdamW(filter(lambda p: p.requires_grad, model.parameters()), lr=1e-3)
+for ep in range(5):
+    tl, _, _ = run_epoch(train_dl, True, opt)
+    vl, vp, vg = run_epoch(val_dl)
+    print(f"[head] ep{ep} train {tl:.3f} val {vl:.3f}")
+
+# Stage 2: unfreeze everything, low learning rate
+for p in model.parameters(): p.requires_grad = True
+opt = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=1e-4)
+sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=20)
+best = 1e9
+for ep in range(20):
+    tl, _, _ = run_epoch(train_dl, True, opt)
+    vl, vp, vg = run_epoch(val_dl)
+    sched.step()
+    print(f"[full] ep{ep} train {tl:.3f} val {vl:.3f}")
+    if vl < best:
+        best = vl
+        torch.save({"state": model.state_dict(), "classes": train_ds.classes}, "models/best.pt")
+
+print(classification_report(vg, vp, target_names=train_ds.classes))
+```
+
+**Training tips:**
+- Watch **validation loss**; if it rises while training loss falls, you're overfitting. Add augmentation, reduce epochs, or get more data.
+- Try a bigger input size (288-384) if lesions are small.
+- Try 2-3 backbones and compare on the validation set.
+
+### Phase 3: Evaluate properly (Days 9-10)
+
+Accuracy alone is misleading for medical data. On the **held-out test set** (touch it once, at the end) report:
+
+- **Sensitivity (recall)** per abnormal class. Missing an abnormality is the costly error.
+- **Specificity / precision**: too many false alarms make doctors ignore the tool.
+- **Confusion matrix**, **ROC-AUC** per class, **F1**.
+- **Calibration**: does "90% confidence" actually mean right ~90% of the time? (Use temperature scaling if not.)
+- Look at **failure cases** by eye. Are errors caused by blur, smoke, glare, instruments?
+
+```python
+from sklearn.metrics import confusion_matrix, roc_auc_score
+# use softmax probabilities on the test set for roc_auc_score(y_true, probs, multi_class="ovr")
+```
+
+Also test on images from a **different source** than the training data (or your app's own snapshots). Performance usually drops. This tells you what to expect in real use.
+
+### Phase 4: Add explainability, "point out the anomaly" (Day 11)
+
+Use **Grad-CAM** to generate a heatmap of the regions that drove the prediction (`src/gradcam.py`):
+
+```python
+import torch, timm, numpy as np, cv2
+from pytorch_grad_cam import GradCAM
+from pytorch_grad_cam.utils.image import show_cam_on_image
+from pytorch_grad_cam.utils.model_targets import ClassifierOutputTarget
+
+def load_model(path="models/best.pt"):
+    ckpt = torch.load(path, map_location="cpu")
+    model = timm.create_model("efficientnet_b0", pretrained=False, num_classes=len(ckpt["classes"]))
+    model.load_state_dict(ckpt["state"]); model.eval()
+    return model, ckpt["classes"]
+
+def gradcam_overlay(model, tensor, rgb_float, class_idx):
+    # For EfficientNet in timm, the last conv block is model.conv_head / model.blocks[-1]
+    cam = GradCAM(model=model, target_layers=[model.blocks[-1]])
+    heat = cam(input_tensor=tensor, targets=[ClassifierOutputTarget(class_idx)])[0]
+    return show_cam_on_image(rgb_float, heat, use_rgb=True), heat
+```
+
+To draw a **bounding box** from the heatmap (a cheap approximation of detection): threshold the heatmap (e.g., > 0.6), find contours with OpenCV, and draw the bounding rectangle of the largest contour. Label these clearly as "regions of interest suggested by the model", since Grad-CAM shows model attention and is not a precise lesion boundary.
+
+If you later need real localization, train **YOLOv8/YOLO11 (Ultralytics)** on box-annotated data (annotate with **CVAT** or **Label Studio**, both free), or a **U-Net** for masks.
+
+### Phase 5: Export the model (Day 11)
+
+```python
+# src/export_onnx.py
+import torch
+from gradcam import load_model
+model, classes = load_model()
+dummy = torch.randn(1, 3, 224, 224)
+torch.onnx.export(model, dummy, "models/model.onnx",
+                  input_names=["input"], output_names=["logits"],
+                  dynamic_axes={"input": {0: "batch"}, "logits": {0: "batch"}},
+                  opset_version=17)
+```
+
+Save the class list in `models/classes.json` alongside it.
+
+### Phase 6: Inference service (Days 12-13)
+
+`service/main.py`:
+
+```python
+import io, base64, json, numpy as np, cv2, torch
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from PIL import Image
+import sys; sys.path.append("../src")
+from gradcam import load_model, gradcam_overlay
+
+app = FastAPI(title="Laparoscopy Predictions")
+model, classes = load_model("../models/best.pt")
+MEAN = np.array([0.485, 0.456, 0.406]); STD = np.array([0.229, 0.224, 0.225])
+SIZE = 224
+CONF_THRESHOLD = 0.5   # below this, report "uncertain"
+
+def preprocess(img: Image.Image):
+    rgb = np.array(img.convert("RGB").resize((SIZE, SIZE))).astype(np.float32) / 255.0
+    x = ((rgb - MEAN) / STD).transpose(2, 0, 1)[None].astype(np.float32)
+    return torch.from_numpy(x), rgb
+
+@app.post("/predict")
+async def predict(file: UploadFile = File(...)):
+    if file.content_type not in ("image/jpeg", "image/png"):
+        raise HTTPException(400, "Upload a JPEG or PNG image")
+    img = Image.open(io.BytesIO(await file.read()))
+    x, rgb = preprocess(img)
+    with torch.no_grad():
+        probs = torch.softmax(model(x), dim=1)[0].numpy()
+    top = int(probs.argmax())
+    overlay, _ = gradcam_overlay(model, x, rgb, top)
+    ok, buf = cv2.imencode(".png", cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR))
+    return {
+        "top_label": classes[top] if probs[top] >= CONF_THRESHOLD else "uncertain",
+        "confidence": float(probs[top]),
+        "probabilities": {c: float(p) for c, p in zip(classes, probs)},
+        "heatmap_png_base64": base64.b64encode(buf).decode(),
+        "disclaimer": "Decision support only. Requires clinician review."
+    }
+
+@app.get("/health")
+def health(): return {"status": "ok"}
+```
+
+Run it:
+```bash
+cd service && uvicorn main:app --host 127.0.0.1 --port 8000
+```
+
+Test:
+```bash
+curl -F "file=@snapshot.jpg" http://127.0.0.1:8000/predict
+```
+
+Bind to `127.0.0.1` (local only) unless you deliberately expose it on a secured hospital LAN.
+
+### Phase 7: Build the Predictions screen (Days 14-16)
+
+**UI layout:**
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Predictions                                             │
+├───────────────────────┬──────────────────────────────────┤
+│  [Upload Image] [Pick │   Original  |  Heatmap overlay   │
+│   from Snapshots]     │   (toggle / side-by-side / slider)│
+│                       ├──────────────────────────────────┤
+│  Thumbnail preview    │  Findings                        │
+│                       │  ● Endometriosis lesion  87%     │
+│  [ Analyze ]          │  ○ Normal                 9%     │
+│                       │  ○ Adhesion               4%     │
+│                       │                                  │
+│                       │  ⚠ Suggested finding, clinician  │
+│                       │    review required.              │
+│                       │  [Save to report] [Export]       │
+└───────────────────────┴──────────────────────────────────┘
+```
+
+**Screen behavior:**
+
+1. **Input:** file picker (JPEG/PNG), plus a "pick from this session's snapshots" gallery. Drag-and-drop if your framework supports it.
+2. **Validate** the file type and size before sending.
+3. **Analyze** button → call `POST /predict` **asynchronously** (background thread/async call) and show a progress indicator so the UI doesn't freeze.
+4. **Display:**
+   - The original image and the heatmap overlay (opacity slider).
+   - Ranked class probabilities as bars.
+   - "Uncertain / low confidence" state when confidence is below the threshold.
+   - The disclaimer, always visible.
+5. **Handle errors:** service not running, timeout, unsupported file.
+6. **Doctor feedback controls:** "Agree / Disagree / Correct label". Store these; they become your next round of training data (Phase 9).
+7. **Save results** (prediction, confidence, model version, timestamp, image reference) to the case record or a report export.
+8. **Audit log:** record who ran what, on which image, with which model version.
+
+Generic client call (pseudocode for any language):
+
+```
+POST http://127.0.0.1:8000/predict
+Content-Type: multipart/form-data
+file=<image bytes>
+→ JSON { top_label, confidence, probabilities, heatmap_png_base64 }
+→ decode base64 → PNG → show in an image control
+```
+
+Start/stop the FastAPI service from the desktop app (spawn it as a child process on launch, poll `/health`, kill it on exit), or package the service with **PyInstaller** into a single executable that ships with your installer.
+
+### Phase 8: Testing and validation (Days 17-18)
+
+- **Functional tests:** wrong file types, huge images, corrupted files, service down.
+- **Robustness tests:** blurry, dark, glare, smoke-filled, different resolutions, and screenshots vs. raw frames. Make sure the preprocessing matches how the app's snapshots are saved (JPEG compression, overlays, aspect ratio).
+- **Performance:** aim for under ~1-2 seconds per image on the target machine (CPU is fine for a single image with EfficientNet-B0).
+- **Clinician review session:** have a doctor review 50-100 outputs and note where it's helpful or misleading. Their feedback is more valuable than any metric.
+
+### Phase 9: Improve over time
+
+1. Collect doctor-confirmed snapshots (with consent and de-identification) via the Agree/Correct feedback.
+2. Retrain periodically; **version every model** (`model_v1.onnx`, `v2`...), and keep the test set fixed so versions are comparable.
+3. Add out-of-distribution handling (e.g., reject images that don't look like laparoscopy) with a confidence threshold or a simple "is this laparoscopy?" classifier.
+4. Consider upgrading to detection/segmentation as labeled data grows.
+5. Monitor for drift: new camera, new lighting, new procedure types can silently degrade accuracy.
+
+---
+
+## 6. Suggested timeline
+
+| Week | Goal |
+|---|---|
+| 1 | Define labels, download datasets, prepare and split data, first baseline model |
+| 2 | Tune training, evaluate on the test set, add Grad-CAM, export ONNX |
+| 3 | FastAPI service + Predictions screen, end-to-end working |
+| 4 | Testing, clinician feedback, feedback loop, documentation |
+
+---
+
+## 7. Common pitfalls
+
+- **Data leakage:** splitting by frame instead of by patient/video. This is the #1 cause of fake 99% accuracy.
+- **Judging only on accuracy:** always check per-class sensitivity.
+- **Domain shift:** a model trained on dataset A often fails on your app's snapshots. Test on your own images early.
+- **Trusting Grad-CAM as ground truth:** it shows attention, not verified lesion boundaries.
+- **Hidden shortcuts:** the model may learn watermarks, instrument presence, or a specific hospital's color tone instead of pathology. Inspect heatmaps on correct predictions too.
+- **Overconfident output:** show "uncertain" when confidence is low, and never present results as a diagnosis.
+- **Patient privacy:** de-identify images, don't log patient info, keep inference on-premises.
+
+---
+
+## 8. Quick-start checklist
+
+- [ ] Define target anomalies and class list
+- [ ] Choose level (recommended: classifier + Grad-CAM)
+- [ ] Download GLENDA / LapGyn4 / Cholec80 (check licenses)
+- [ ] Extract frames, clean, split **by patient/video**
+- [ ] Fine-tune EfficientNet-B0 or ResNet-50 on Colab/Kaggle
+- [ ] Evaluate with sensitivity, specificity, AUC, confusion matrix
+- [ ] Add Grad-CAM overlays
+- [ ] Export to ONNX, save `classes.json`
+- [ ] Build the FastAPI `/predict` service
+- [ ] Build the Predictions screen (upload, analyze, overlay, disclaimer, feedback)
+- [ ] Test on your app's real snapshots and with a clinician
+- [ ] Version the model, log usage, plan retraining
+
+---
+
+## 9. Useful references
+
+- PyTorch Image Models (`timm`): pretrained backbones
+- `pytorch-grad-cam`: Grad-CAM and variants
+- Ultralytics YOLO: if you move to detection
+- CVAT, Label Studio: free annotation tools
+- ONNX Runtime: cross-language inference (C#, C++, Java, Python)
+- Kaggle / Google Colab: free GPU training
