@@ -482,3 +482,10 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+.venv/
+data/
+runs/
+models/*.pt
+models/*.onnx
+__pycache__/
+*.ipynb_checkpoints
