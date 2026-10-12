@@ -487,5 +487,9 @@ data/
 runs/
 models/*.pt
 models/*.onnx
+**/models/*.pt
+**/models/*.onnx
+*.pt
+*.onnx
 __pycache__/
-*.ipynb_checkpoints
+*.ipynb_checkpoints
