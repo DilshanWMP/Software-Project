@@ -1,4 +1,3 @@
-
 """
 Environment and Model Verification Test
 Checks core packages and performs a dry-run forward pass with EfficientNet-B0.
@@ -24,23 +23,18 @@ def verify():
 
     print("\n=== Testing Pretrained Backbone Forward Pass ===")
 
-    # Instantiate EfficientNet-B0 with 3 output classes.
-    # pretrained=True may download the weights if not cached.
+    # pretrained=True may download the weights if they are not cached.
     model = timm.create_model(
         "efficientnet_b0",
         pretrained=True,
-        num_classes=3
+        num_classes=3,
     )
     model.eval()
 
-    # Create a dummy batch: batch size 1, RGB channels, 224x224.
     dummy_input = torch.randn(1, 3, 224, 224)
-
-    # Run inference without calculating gradients.
     with torch.no_grad():
         output = model(dummy_input)
 
-    # Verify that the output has the expected dimensions.
     assert output.shape == (1, 3), (
         f"Unexpected output shape: {tuple(output.shape)}"
     )
