@@ -492,4 +492,13 @@ models/*.onnx
 *.pt
 *.onnx
 __pycache__/
-*.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# Python ML Environment & Data (lap-predictions)
+lap-predictions/.venv/
+lap-predictions/data/
+lap-predictions/runs/
+lap-predictions/models/*.pt
+lap-predictions/models/*.onnx
+lap-predictions/__pycache__/
+lap-predictions/*/__pycache__/
