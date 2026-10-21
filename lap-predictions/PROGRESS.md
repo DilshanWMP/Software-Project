@@ -40,15 +40,18 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 ---
 
 #### F1. Label Schema and Data Acquisition 🛑
-- **Status:** `PLANNED`
+- **Status:** `IN PROGRESS` — class schema approved; provisional catalog and validated raw manifest implemented. Official mask-palette and dataset-term verification remain pending.
 - **Plan:**
-  1. Propose target class schema (`normal` + abnormal classes based on available data).
-  2. Catalog candidate datasets (GLENDA, LapGyn4, Cholec80, etc.) with license, size, label type, and access requirements.
-  3. Create raw data ingestion folder and manifest structure (`data/raw/`, `manifest.csv`).
+  1. Define the target classification question and class schema based on available annotations. Approved project target: binary instrument presence (`tool_present` / `anatomy_only`), not normal/abnormal classification; see `DECISIONS.md`.
+  2. Audit candidate data against the question and record a provisional dataset catalog; verify authoritative license/access terms and mask palette before use.
+  3. Generate and validate `data/raw/manifest.csv` with `python lap-predictions/src/build_f1_manifest.py` from the repository root. Labels remain blank pending verified palette mapping and dataset-use terms.
 - **Acceptance Criteria:**
-  - [ ] `DECISIONS.md` has approved class list and dataset catalog
-  - [ ] Raw data placed in `data/raw/` with manifest (`manifest.csv`)
-  - [ ] Human approval obtained for class list and gated datasets
+  - [ ] `DECISIONS.md` has an approved class list and verified dataset catalog
+  - [x] Raw data is cataloged in `data/raw/manifest.csv`; manifest structure and image/mask pairs validate
+  - [x] Human approval obtained for the class list
+  - [ ] Dataset terms and any gated-access approval verified
+- **Audit findings:** Local M2CAI-seg folders contain overlapping image IDs (`trainval` overlaps the named `train`/`test` folders, and `train`/`test` also overlap). These must not be treated as independent splits. No patient/video IDs or authoritative license/palette information were found in the local folder layout.
+- **Blocked:** Do not assign labels or mark F1 complete until the official mask palette, annotation completeness, and dataset use terms are confirmed. The manifest generator does not infer labels.
 
 ---
 
