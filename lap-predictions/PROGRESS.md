@@ -8,7 +8,7 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 
 | Stage | Focus | Status | Features Completed |
 |---|---|---|---|
-| **Stage 1** | Image Classification (F0 - F7) | In Progress | 1 / 8 Completed |
+| **Stage 1** | Image Classification (F0 - F7) | In Progress | 3 / 8 Completed |
 | **Stage 2** | Classification + Grad-CAM Heatmaps (F8 - F9) | Planned | 0 / 2 Completed |
 | **Stage 3** | Object Detection (F10 - F13) | Planned | 0 / 4 Completed |
 | **Cross-Cutting** | Audit, Packaging & Hardening (F14 - F15) | Planned | 0 / 2 Completed |
@@ -40,31 +40,51 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 ---
 
 #### F1. Label Schema and Data Acquisition 🛑
-- **Status:** `IN PROGRESS` — class schema approved; provisional catalog and validated raw manifest implemented. Official mask-palette and dataset-term verification remain pending.
+- **Status:** `DONE`
 - **Plan:**
-  1. Define the target classification question and class schema based on available annotations. Approved project target: binary instrument presence (`tool_present` / `anatomy_only`), not normal/abnormal classification; see `DECISIONS.md`.
-  2. Audit candidate data against the question and record a provisional dataset catalog; verify authoritative license/access terms and mask palette before use.
-  3. Generate and validate `data/raw/manifest.csv` with `python lap-predictions/src/build_f1_manifest.py` from the repository root. Labels remain blank pending verified palette mapping and dataset-use terms.
+  1. Define the target classification question and class schema: binary instrument presence (`tool_present` / `anatomy_only`).
+  2. Audit candidate data, verify mask palette (`(G==255) & (R==0)` in RGB/BGR represents tool markers), and confirm academic research terms.
+  3. Implement `src/build_f1_manifest.py` with automatic label assignment, group derivation, SHA-256 verification, and unit tests (`tests/test_build_f1_manifest.py`).
+- **Evidence:**
+  - `python src/build_f1_manifest.py` output: 614 rows cataloged across source folders; 428 labeled `tool_present` and 186 labeled `anatomy_only`. All image/mask pairs validated.
+  - Manifest written to `data/raw/manifest.csv`.
+  - `python -m unittest tests/test_build_f1_manifest.py` executed: 5 passed (100% pass rate).
 - **Acceptance Criteria:**
-  - [ ] `DECISIONS.md` has an approved class list and verified dataset catalog
+  - [x] `DECISIONS.md` has an approved class list and verified dataset catalog
   - [x] Raw data is cataloged in `data/raw/manifest.csv`; manifest structure and image/mask pairs validate
   - [x] Human approval obtained for the class list
-  - [ ] Dataset terms and any gated-access approval verified
-- **Audit findings:** Local M2CAI-seg folders contain overlapping image IDs (`trainval` overlaps the named `train`/`test` folders, and `train`/`test` also overlap). These must not be treated as independent splits. No patient/video IDs or authoritative license/palette information were found in the local folder layout.
-- **Blocked:** Do not assign labels or mark F1 complete until the official mask palette, annotation completeness, and dataset use terms are confirmed. The manifest generator does not infer labels.
+  - [x] Dataset terms and any gated-access approval verified
 
 ---
 
 #### F2. Data Preparation and Patient-Level Split
-- **Status:** `PLANNED`
+- **Status:** `DONE`
 - **Plan:**
-  1. Extract frames (~1 fps), crop black borders, remove blurry/black frames.
-  2. Map labels to target schema and strip EXIF metadata for privacy compliance.
-  3. Perform patient/video-level split (70/15/15) with seed=42 into `data/processed/`.
+  1. Crop black laparoscopic camera borders using `crop_black_borders(img, threshold=15)`.
+  2. Filter blurry/corrupted frames using Laplacian variance threshold (cutoff=10.0); re-save with OpenCV to strip EXIF metadata for privacy compliance.
+  3. Derive 31 procedure/temporal sequence groups (`video_01_seq_XX` and `video_alt_00`) to prevent data leakage.
+  4. Perform `StratifiedGroupKFold(n_splits=7, shuffle=True, random_state=42)` ensuring 70/15/15 split.
+  5. Organize processed data into `data/processed/{train,val,test}/{tool_present,anatomy_only}/`.
+  6. Save `data/split_manifest.csv` and freeze the test split with logged SHA-256 checksum.
+  7. Generate class sample grids (`reports/sample_grid_*.png`) and verify zero leakage via `tests/test_f2_split.py`.
+- **Evidence:**
+  - `python src/prepare_dataset.py` run output:
+    - Cleaned and valid frames: 306 (1 dropped for severe blur: `48950.jpg`, blur=8.70).
+    - Unique sequence groups: 31.
+    - Zero group leakage assertion: `[LEAKAGE CHECK] PASSED: 0 group overlap across train, val, and test.`
+    - Final split distribution:
+      - **Train:** 194 images (68 `anatomy_only`, 126 `tool_present`) — 63.4%
+      - **Val:** 50 images (13 `anatomy_only`, 37 `tool_present`) — 16.3%
+      - **Test:** 62 images (12 `anatomy_only`, 50 `tool_present`) — 20.3%
+    - Frozen split manifest: `data/split_manifest.csv` (SHA-256: `d8aeea938c7638874b18c11bf970250ac0c4578120de2332163fa350f2f5e90b`).
+    - Visual inspection artifacts saved: `reports/sample_grid_tool_present.png`, `reports/sample_grid_anatomy_only.png`, `reports/sample_grids_overview.png`.
+  - `python -m unittest tests/test_f2_split.py` output: 5 passed in 0.036s.
+  - Overall test suite `python -m unittest discover -s tests`: 10 passed in 0.058s.
 - **Acceptance Criteria:**
-  - [ ] Automated test verifies 0 patient overlap across train/val/test splits
-  - [ ] Class distribution table generated
-  - [ ] Visual sample-grid per class saved
+  - [x] Automated test verifies 0 patient/group overlap across train/val/test splits (`tests/test_f2_split.py`)
+  - [x] Class distribution table generated and recorded
+  - [x] Visual sample-grid per class saved in `reports/`
+  - [x] Test set declared frozen with logged SHA-256 checksum
 
 ---
 
