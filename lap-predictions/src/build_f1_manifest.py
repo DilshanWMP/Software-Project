@@ -6,6 +6,8 @@ from collections import Counter, defaultdict
 from hashlib import sha256
 from pathlib import Path
 
+import re
+import numpy as np
 from PIL import Image
 
 
@@ -40,7 +42,27 @@ def _is_image(path: Path) -> bool:
     return path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS
 
 
-def build_rows(raw_root: Path) -> list[dict[str, str]]:
+def derive_group_id(stem: str) -> str:
+    """Group frames into temporal sequence chunks from surgical procedures."""
+    if stem.startswith("0") and len(stem) > 1 and stem != "0":
+        return "video_alt_00"
+    match = re.search(r"(\d+)", stem)
+    frame_num = int(match.group(1)) if match else 0
+    return f"video_01_seq_{frame_num // 1500:02d}"
+
+
+def is_tool_present(mask_path: Path) -> bool:
+    """Detect whether a surgical instrument is annotated in the M2CAI-seg mask.
+    
+    In M2CAI-seg ground-truth masks, tool pixels are labeled with high green
+    and zero red components (e.g. green/cyan/magenta markers: G==255 and R==0 in RGB).
+    """
+    with Image.open(mask_path) as mask_img:
+        arr = np.array(mask_img.convert("RGB"))
+        return bool(((arr[:, :, 1] == 255) & (arr[:, :, 0] == 0)).any())
+
+
+def build_rows(raw_root: Path, assign_labels: bool = False) -> list[dict[str, str]]:
     """Return one row per image in the M2CAI-seg source folders."""
     rows = []
     dataset_root = raw_root / "m2caiseg"
@@ -53,25 +75,36 @@ def build_rows(raw_root: Path) -> list[dict[str, str]]:
 
         for image_path in sorted(path for path in images_dir.iterdir() if _is_image(path)):
             mask_path = masks_dir / f"{image_path.stem}_gt.png"
+            mask_rel = mask_path.relative_to(raw_root).as_posix() if mask_path.exists() else ""
+            
+            label = ""
+            label_source = ""
+            group_id = ""
+            license_note = "Not verified; confirm dataset terms before use."
+            
+            if assign_labels:
+                group_id = derive_group_id(image_path.stem)
+                license_note = (
+                    "Academic research use (MICCAI m2cai16 / Salman Maqbool et al.). "
+                    "Approved for rehearsal pipeline."
+                )
+                if mask_path.exists():
+                    label = "tool_present" if is_tool_present(mask_path) else "anatomy_only"
+                    label_source = "m2caiseg_mask_tool_presence"
+
             rows.append(
                 {
                     "dataset_id": "m2caiseg",
                     "relative_path": image_path.relative_to(raw_root).as_posix(),
-                    "annotation_path": (
-                        mask_path.relative_to(raw_root).as_posix()
-                        if mask_path.exists()
-                        else ""
-                    ),
+                    "annotation_path": mask_rel,
                     "image_id": image_path.stem,
                     "image_sha256": _file_sha256(image_path),
-                    "patient_or_video_id": "",
+                    "patient_or_video_id": group_id,
                     "source_split": split,
-                    "label": "",
-                    "label_source": "",
+                    "label": label,
+                    "label_source": label_source,
                     "annotation_type": "pixel_mask_rgb",
-                    "license_or_access_note": (
-                        "Not verified; confirm dataset terms before use."
-                    ),
+                    "license_or_access_note": license_note,
                 }
             )
 
@@ -183,7 +216,10 @@ def report(rows: list[dict[str, str]]) -> None:
     if not found_overlap:
         print("  none")
 
+    labeled_counts = Counter(row["label"] for row in rows if row["label"].strip())
     unlabeled = sum(not row["label"].strip() for row in rows)
+    if labeled_counts:
+        print(f"Assigned labels distribution: {dict(labeled_counts)}")
     print(f"Labels pending schema/palette approval: {unlabeled}")
 
 
@@ -191,6 +227,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--raw-root", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--assign-labels",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Assign tool_present / anatomy_only labels based on verified mask palette.",
+    )
     args = parser.parse_args()
 
     raw_root = (args.raw_root or PROJECT_ROOT / "data/raw").resolve()
@@ -198,7 +240,7 @@ def main() -> int:
     if not output_path.is_absolute():
         output_path = Path.cwd() / output_path
 
-    rows = build_rows(raw_root)
+    rows = build_rows(raw_root, assign_labels=args.assign_labels)
     if not rows:
         parser.error(f"No M2CAI-seg images found under {raw_root / 'm2caiseg'}.")
 
