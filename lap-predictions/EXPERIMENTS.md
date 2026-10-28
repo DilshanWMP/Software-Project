@@ -10,7 +10,7 @@ Experiment log for `lap-predictions` project. One row per training run.
 
 | Run ID | Date | Stage | Arch | Head LR | FT LR | Head Ep | FT Ep (stopped) | Val BalAcc | Test BalAcc | ROC-AUC | Notes |
 |--------|------|-------|------|---------|-------|---------|-----------------|------------|-------------|---------|-------|
-| `v1-baseline` | 2026-10-28 | F3 | `efficientnet_b0` | 1e-3 | 1e-4 | 5 | 10 | 0.8056 | TBD (F4) | TBD (F4) | Baseline; label smoothing=0.05; drop_rate=0.25; WeightedRandomSampler; seed=42; early stopping at ep 10 (best Val BalAcc 0.8056) |
+| `v1-baseline` | 2026-10-28 | F3/F4 | `efficientnet_b0` | 1e-3 | 1e-4 | 5 | 10 | 0.8056 | 0.7150 | 0.8200 | Baseline; label smoothing=0.05; drop_rate=0.25; WeightedRandomSampler; seed=42; PR-AUC=0.957; Sens@0.50=0.680, Sens@0.20=0.920; ECE=0.097 |
 
 ---
 

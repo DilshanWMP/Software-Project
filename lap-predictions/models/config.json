@@ -1,0 +1,10 @@
+{
+  "temperature": 4.672170162200928,
+  "abnormal_threshold": 0.5,
+  "uncertain_below": 0.6,
+  "classes": [
+    "anatomy_only",
+    "tool_present"
+  ],
+  "model_version": "classifier_v1"
+}

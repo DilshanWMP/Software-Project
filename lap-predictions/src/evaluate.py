@@ -7,6 +7,9 @@ Produces: per-class metrics, ROC-AUC, PR-AUC, calibration, bootstrap CIs,
 """
 
 import os
+import sys
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["NO_ALBUMENTATIONS_UPDATE"] = "1"
 if "MPLCONFIGDIR" not in os.environ:
@@ -104,9 +107,13 @@ def bootstrap_ci(y_true: np.ndarray, y_pred: np.ndarray,
     for _ in range(n):
         idx = rng.integers(0, len(y_true), len(y_true))
         try:
+            if len(np.unique(y_true[idx])) < 2:
+                continue
             vals.append(metric_fn(y_true[idx], y_pred[idx]))
         except Exception:
             pass
+    if not vals:
+        return (0.0, 1.0)
     return (float(np.percentile(vals, 2.5)),
             float(np.percentile(vals, 97.5)))
 
@@ -190,7 +197,16 @@ def save_failure_gallery(failure_paths: list[str], failure_labels: list[int],
                          classes: list[str], out_path: Path,
                          n_show: int = 20, title: str = "Top Failures") -> None:
     """Save a grid of the worst failure-case images."""
-    n    = min(n_show, len(failure_paths))
+    n = min(n_show, len(failure_paths))
+    if n == 0:
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.text(0.5, 0.5, "No failures detected (100% accuracy on test set)",
+                ha="center", va="center", fontsize=12)
+        ax.axis("off")
+        plt.savefig(str(out_path), dpi=150)
+        plt.close()
+        return
+
     cols = 4
     rows = (n + cols - 1) // cols
 
@@ -316,9 +332,15 @@ def main(args):
 
     # ── Threshold selection on val (target sensitivity 90 %) ──────────────
     target_sens = float(args.target_sensitivity)
-    threshold   = pick_threshold(p_pos, y_bin, target_sens)
+    if logits_path.exists():
+        val_probs_pos = F.softmax(val_logits / temperature, dim=1).numpy()[:, pos_idx]
+        val_y_bin     = (val_labels.numpy() == pos_idx).astype(int)
+        threshold     = pick_threshold(val_probs_pos, val_y_bin, target_sens)
+        print(f"\nThreshold @ target_sens={target_sens} (fitted on validation set): {threshold:.3f}")
+    else:
+        threshold = pick_threshold(p_pos, y_bin, target_sens)
+        print(f"\nThreshold @ target_sens={target_sens}: {threshold:.3f}")
     preds_thresh = (p_pos >= threshold).astype(int)
-    print(f"\nThreshold @ target_sens={target_sens}: {threshold:.3f}")
 
     # ── Core metrics ───────────────────────────────────────────────────────
     bal_acc  = balanced_accuracy_score(targets, preds)
@@ -331,7 +353,7 @@ def main(args):
     pr_auc   = float(average_precision_score(y_bin, p_pos))
 
     # Sensitivity / Specificity at chosen threshold
-    tn, fp, fn, tp = confusion_matrix(y_bin, preds_thresh).ravel()
+    tn, fp, fn, tp = confusion_matrix(y_bin, preds_thresh, labels=[0, 1]).ravel()
     sensitivity    = tp / max(1, tp + fn)
     specificity    = tn / max(1, tn + fp)
 
@@ -392,7 +414,7 @@ def main(args):
     print("=" * 60)
     print(f"Architecture      : {arch}")
     print(f"Temperature       : {temperature:.4f}")
-    print(f"Threshold         : {threshold:.3f} (target sensitivity ≥ {target_sens})")
+    print(f"Threshold         : {threshold:.3f} (target sensitivity >= {target_sens})")
     print(f"\nBalanced Accuracy : {bal_acc:.4f}")
     print(f"ROC-AUC           : {roc_auc:.4f}  (95% CI [{roc_lo:.4f}, {roc_hi:.4f}])")
     print(f"PR-AUC (AP)       : {pr_auc:.4f}  (95% CI [{pr_lo:.4f},  {pr_hi:.4f}])")

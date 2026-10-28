@@ -8,7 +8,7 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 
 | Stage | Focus | Status | Features Completed |
 |---|---|---|---|
-| **Stage 1** | Image Classification (F0 - F7) | In Progress | 4 / 8 Completed |
+| **Stage 1** | Image Classification (F0 - F7) | In Progress | 5 / 8 Completed (F4 at Gate) |
 | **Stage 2** | Classification + Grad-CAM Heatmaps (F8 - F9) | Planned | 0 / 2 Completed |
 | **Stage 3** | Object Detection (F10 - F13) | Planned | 0 / 4 Completed |
 | **Cross-Cutting** | Audit, Packaging & Hardening (F14 - F15) | Planned | 0 / 2 Completed |
@@ -115,13 +115,29 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 ---
 
 #### F4. Evaluation Report 🛑
-- **Status:** `PLANNED`
+- **Status:** `DONE (Awaiting Sign-off Gate 🛑)`
 - **Plan:**
-  1. Evaluate `classifier_v1` on frozen test set (Sensitivity, Specificity, Precision, F1, ROC-AUC).
-  2. Generate confusion matrix and failure case gallery in `reports/stage1_eval.md`.
+  1. Evaluate `classifier_v1` on the frozen test set (62 images: 50 `tool_present`, 12 `anatomy_only`).
+  2. Measure Balanced Accuracy, per-class Precision/Recall/F1, ROC-AUC, PR-AUC, Sensitivity, and Specificity with bootstrap 95% confidence intervals.
+  3. Perform Platt-style temperature calibration using validation logits (T=4.6722) and evaluate Expected Calibration Error (ECE).
+  4. Generate and save diagnostic plots: `confusion_matrix.png`, `roc_curve.png`, `pr_curve.png`, `reliability_curve.png`, and top-20 `failure_gallery.png`.
+  5. Compile full evaluation report in `reports/stage1_eval.md` and persist runtime calibration parameters to `models/config.json`.
+- **Evidence:**
+  - `python predictions/src/evaluate.py --data data/processed --model models/classifier_v1.pt --reports reports` executed:
+    - Balanced Accuracy: 0.7150
+    - ROC-AUC: **0.8200** (95% CI [0.6950, 0.9190])
+    - PR-AUC: **0.9567** (95% CI [0.9156, 0.9870])
+    - Sensitivity @ threshold 0.50: 0.6800 (34/50); Sensitivity @ operating threshold 0.20: **0.9200** (46/50)
+    - Specificity @ threshold 0.50: 0.7500 (9/12)
+    - ECE: 0.0970 (< 0.10 target met)
+    - False Negatives: 16 (at 0.50 threshold) / 4 (at 0.20 threshold)
+    - False Positives: 3 (at 0.50 threshold) / 8 (at 0.20 threshold)
+    - Generated plots: `reports/confusion_matrix.png`, `reports/roc_curve.png`, `reports/pr_curve.png`, `reports/reliability_curve.png`, `reports/failure_gallery.png`.
+    - Generated report: `reports/stage1_eval.md`.
+    - Service configuration: `models/config.json`.
 - **Acceptance Criteria:**
-  - [ ] Comprehensive evaluation report generated
-  - [ ] Sensitivity target agreed with clinician/human stakeholder
+  - [x] Comprehensive evaluation report generated (`reports/stage1_eval.md`)
+  - [ ] Sensitivity target and operating threshold agreed with clinician/human stakeholder 🛑
 
 ---
 
