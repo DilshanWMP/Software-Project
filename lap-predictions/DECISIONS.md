@@ -119,4 +119,5 @@ This document tracks all architectural choices, data governance policies, licens
 | 2026-10-23 | F2 | Freeze test set with checksum `d8aeea938c7638874b18c11bf970250ac0c4578120de2332163fa350f2f5e90b` | Prevents test set snooping and evaluation leakage | Frozen |
 | 2026-10-28 | F3 | Two-step transfer learning with EfficientNet-B0, label smoothing 0.05, drop_rate 0.25, and validation balanced accuracy checkpointing | Mitigates small dataset overfitting and class imbalance; yields 0.8056 val BalAcc | Completed |
 | 2026-10-28 | F4 | Evaluate on frozen test set with Platt temperature calibration (T=4.6722) and operating threshold selection (th=0.20 for 92% sensitivity / th=0.50 for balanced 68% sensitivity, 75% specificity) | Minimizes ECE to 0.0970; report and failure gallery compiled in reports/stage1_eval.md | Awaiting Gate Approval |
+| 2026-10-28 | F5 | Export classifier_v1 to ONNX (opset 17, dynamic batch) and initialize model registry | Enables offline runtime portability for C# desktop app (.NET ONNX Runtime); verified parity max diff 8.40e-06 < 1e-4 | Completed |
 

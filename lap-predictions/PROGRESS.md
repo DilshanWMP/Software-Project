@@ -8,7 +8,7 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 
 | Stage | Focus | Status | Features Completed |
 |---|---|---|---|
-| **Stage 1** | Image Classification (F0 - F7) | In Progress | 5 / 8 Completed (F4 at Gate) |
+| **Stage 1** | Image Classification (F0 - F7) | In Progress | 6 / 8 Completed |
 | **Stage 2** | Classification + Grad-CAM Heatmaps (F8 - F9) | Planned | 0 / 2 Completed |
 | **Stage 3** | Object Detection (F10 - F13) | Planned | 0 / 4 Completed |
 | **Cross-Cutting** | Audit, Packaging & Hardening (F14 - F15) | Planned | 0 / 2 Completed |
@@ -142,14 +142,30 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 ---
 
 #### F5. Export and Model Registry
-- **Status:** `PLANNED`
+- **Status:** `DONE`
 - **Plan:**
-  1. Export `classifier_v1` to ONNX (opset 17, dynamic batch).
-  2. Verify numerical parity between PyTorch and ONNX Runtime outputs.
-  3. Update `models/REGISTRY.md` with version metadata.
+  1. Export `classifier_v1` checkpoint to ONNX format (opset 17, dynamic batch).
+  2. Validate graph integrity with `onnx.checker` and verify numerical parity against PyTorch across multiple batch sizes (tolerance < 1e-4).
+  3. Initialize and maintain `models/REGISTRY.md` with version metadata, lineage, dataset checksums, and evaluation metrics.
+  4. Validate export and registry through automated unit tests in `tests/test_f5_export.py`.
+- **Evidence:**
+  - `python src/export_onnx.py --model models/classifier_v1.pt --out models/classifier_v1.onnx --opset 17 --tolerance 1e-4` executed:
+    - Opset: 17, dynamic batch dimension `[batch_size, 3, 224, 224]` -> `[batch_size, 2]`.
+    - `onnx.checker.check_model` passed without structural violations.
+    - ONNX Runtime numerical parity evaluated:
+      - Batch 1: Max diff = 1.19e-06
+      - Batch 2: Max diff = 6.44e-06
+      - Batch 4: Max diff = 8.05e-06
+      - Batch 8: Max diff = 8.40e-06
+      - All batch tests passed well within 1.00e-04 tolerance.
+    - Model artifact saved: `models/classifier_v1.onnx` (15.27 MB).
+    - Registry documentation authored: `models/REGISTRY.md`.
+  - Comprehensive unit test `tests/test_f5_export.py` executed: 5 tests passed.
+  - Full test suite `python -m unittest discover -s tests`: 22 passed in 1.09s (100% pass rate).
 - **Acceptance Criteria:**
-  - [ ] Parity test passes (<1e-4 tolerance)
-  - [ ] `models/REGISTRY.md` updated
+  - [x] Parity test passes (<1e-4 tolerance)
+  - [x] `models/REGISTRY.md` updated
+  - [x] Old versions untouched
 
 ---
 
