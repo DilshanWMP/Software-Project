@@ -117,4 +117,5 @@ This document tracks all architectural choices, data governance policies, licens
 | 2026-10-23 | F1 | Verify M2CAI-seg mask palette (G=255, R=0) and academic terms | Enables authoritative labeling for rehearsal classification | Completed |
 | 2026-10-23 | F2 | Implement black border cropping, blur filtering (cutoff=10.0), EXIF stripping, and sequence group splitting | Guarantees leakage-free training, clean data, and patient privacy compliance | Completed |
 | 2026-10-23 | F2 | Freeze test set with checksum `d8aeea938c7638874b18c11bf970250ac0c4578120de2332163fa350f2f5e90b` | Prevents test set snooping and evaluation leakage | Frozen |
+| 2026-10-28 | F3 | Two-step transfer learning with EfficientNet-B0, label smoothing 0.05, drop_rate 0.25, and validation balanced accuracy checkpointing | Mitigates small dataset overfitting and class imbalance; yields 0.8056 val BalAcc | Completed |
 

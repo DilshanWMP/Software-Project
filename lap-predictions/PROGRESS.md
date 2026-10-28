@@ -8,7 +8,7 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 
 | Stage | Focus | Status | Features Completed |
 |---|---|---|---|
-| **Stage 1** | Image Classification (F0 - F7) | In Progress | 3 / 8 Completed |
+| **Stage 1** | Image Classification (F0 - F7) | In Progress | 4 / 8 Completed |
 | **Stage 2** | Classification + Grad-CAM Heatmaps (F8 - F9) | Planned | 0 / 2 Completed |
 | **Stage 3** | Object Detection (F10 - F13) | Planned | 0 / 4 Completed |
 | **Cross-Cutting** | Audit, Packaging & Hardening (F14 - F15) | Planned | 0 / 2 Completed |
@@ -89,15 +89,28 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 ---
 
 #### F3. Baseline Classifier (`classifier_v1`)
-- **Status:** `PLANNED`
+- **Status:** `DONE`
 - **Plan:**
-  1. Implement `src/dataset.py` with Albumentations data augmentations.
-  2. Build `src/train.py` for two-step transfer learning with EfficientNet-B0 (`timm`).
-  3. Log training and validation loss/metrics using TensorBoard.
+  1. Implement `src/dataset.py` with Albumentations data augmentations (flips, rotations, contrast/brightness, color jitter, blur, coarse dropout) and ImageNet normalization.
+  2. Build `src/train.py` for two-step transfer learning with EfficientNet-B0 (`timm`): Step A head-only warm-up with frozen backbone, Step B full fine-tuning with Cosine Annealing LR and WeightedRandomSampler.
+  3. Track training and validation loss, balanced accuracy, and generalization gap using TensorBoard (`runs/classifier_v1`).
+  4. Save model checkpoint (`models/classifier_v1.pt`), class index mapping (`models/classes.json`), and validation logits (`models/classifier_v1_val_logits.pt`) for downstream temperature calibration.
+  5. Validate implementation with automated unit tests in `tests/test_f3_classifier.py`.
+- **Evidence:**
+  - `python -u predictions/src/train.py --data data/processed --out models/classifier_v1.pt --bs 16 --head_epochs 5 --epochs 20 --patience 6 --seed 42` executed:
+    - Step A (Head): 5 epochs completed, validation loss stabilized at 1.010, val BalAcc = 0.650.
+    - Step B (Fine-tuning): reached peak validation balanced accuracy of **0.8056** (80.6%) at epoch 4 & 6.
+    - Early stopping triggered at epoch 10 after 6 epochs without validation score improvement.
+    - Checkpoint successfully persisted: `models/classifier_v1.pt` (Val BalAcc: 0.8056, epoch: 4, seed: 42).
+    - Validation logits stored: `models/classifier_v1_val_logits.pt` (50 validation instances with ground-truth targets).
+    - Class metadata written: `models/classes.json` (`["anatomy_only", "tool_present"]`).
+    - TensorBoard run logs saved under `runs/classifier_v1/`.
+  - Comprehensive unit test `tests/test_f3_classifier.py` executed: 7 tests passed in 0.24s.
+  - Full test suite `python -m unittest discover -s tests`: 17 passed in 0.47s (100% pass rate).
 - **Acceptance Criteria:**
-  - [ ] Training script completes end-to-end
-  - [ ] Checkpoint saved as `models/classifier_v1.pt` with class mapping
-  - [ ] No severe overfitting observed
+  - [x] Training script completes end-to-end
+  - [x] Checkpoint saved as `models/classifier_v1.pt` with class mapping
+  - [x] No severe overfitting observed (validation balanced accuracy = 0.8056)
 
 ---
 
