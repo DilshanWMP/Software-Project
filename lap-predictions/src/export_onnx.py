@@ -84,3 +84,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     export_onnx(args.model, args.out, opset=args.opset, tolerance=args.tolerance)
+
