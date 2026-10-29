@@ -170,14 +170,25 @@ Tracking progress for the **Laparoscopy Anomaly Detection & Predictions System**
 ---
 
 #### F6. Inference API v1: `/predict`
-- **Status:** `PLANNED`
+- **Status:** `DONE`
 - **Plan:**
-  1. Extend `service/main.py` with `POST /predict` supporting JPEG/PNG upload.
-  2. Return softmax probabilities, confidence thresholding (`uncertain`), model version, and mandatory disclaimer.
+  1. Implement `service/main.py` POST /predict endpoint with ONNX Runtime primary inference and PyTorch fallback.
+  2. Temperature-scaled softmax probabilities (T=4.6722), ABNORMAL_THRESHOLD decision logic, uncertain flag.
+  3. Input validation: MIME type check, 15 MB size limit, corruption detection.
+  4. Full JSON response schema: model_version, top_label, confidence, probabilities, finding_detected, decision_threshold, uncertain, image_size, inference_time_ms, disclaimer.
+  5. GET /health and GET /info endpoints.
+  6. CORS middleware, 9 unit tests, and API README.
+- **Evidence:**
+  - `service/main.py` fully implemented with ONNX Runtime + PyTorch fallback.
+  - `tests/test_f6_service.py`: 9 tests pass (health, info, valid JPEG, valid PNG, real dataset image, 415, 400 corrupted, 400 empty, 413 oversized).
+  - Full test suite: 31 tests pass in under 1s.
+  - Sample real prediction: top_label=anatomy_only, confidence=0.7301, inference_time_ms=9.79ms.
+  - CORS fixed: allow_credentials=False with allow_origins=["*"].
+  - API schema documented in `README.md`.
 - **Acceptance Criteria:**
-  - [ ] Validated on valid/corrupted/oversized images
-  - [ ] Response time <2s on CPU
-  - [ ] Schema fully documented in README
+  - [x] Validated on valid/corrupted/oversized images (9 test cases pass)
+  - [x] Response time < 2s on CPU (measured ~10 ms via ONNX Runtime)
+  - [x] Schema fully documented in README
 
 ---
 

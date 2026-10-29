@@ -50,6 +50,9 @@
         <DataTemplate DataType="{x:Type viewmodels:MediaViewerViewModel}">
             <views:MediaViewerView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:PredictionsViewModel}">
+            <views:PredictionsView/>
+        </DataTemplate>
     </Window.Resources>
 
     <Grid>
@@ -72,6 +75,9 @@
                 </Button>
                 <Button Command="{Binding NavigateToGalleryCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Gallery" Padding="4" Margin="0,20,0,0">
                     <materialDesign:PackIcon Kind="ImageMultiple" Width="30" Height="30"/>
+                </Button>
+                <Button Command="{Binding NavigateToPredictionsCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="AI Predictions" Padding="4" Margin="0,20,0,0">
+                    <materialDesign:PackIcon Kind="Brain" Width="30" Height="30"/>
                 </Button>
                  <Button Command="{Binding LogoutCommand}" Style="{StaticResource MaterialDesignFlatButton}" ToolTip="Logout" Padding="4" Margin="0,50,0,0">
                     <materialDesign:PackIcon Kind="Logout" Width="30" Height="30"/>
