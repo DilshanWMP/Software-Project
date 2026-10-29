@@ -186,3 +186,4 @@ print(resp.json())
 > **Safety Notice:** This service is a **decision support prototype only**.  
 > It has not undergone clinical validation and must not be used for medical diagnosis.  
 > All results require clinician review before any clinical action is taken.
+
