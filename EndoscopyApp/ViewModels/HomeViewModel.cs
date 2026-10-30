@@ -30,6 +30,12 @@ namespace EndoscopyApp.ViewModels
         }
 
         [RelayCommand]
+        private void NavigateToPredictions()
+        {
+            _mainViewModel.NavigateToPredictions();
+        }
+
+        [RelayCommand]
         private void Settings()
         {
             _mainViewModel.NavigateToSettings();

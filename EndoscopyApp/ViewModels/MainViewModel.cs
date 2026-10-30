@@ -89,7 +89,8 @@ namespace EndoscopyApp.ViewModels
                 viewModel is PatientsViewModel || viewModel is LiveViewModel ||
                 viewModel is RecordViewModel || viewModel is SelectPatientViewModel ||
                 viewModel is RecordedVideosViewModel || viewModel is PatientMediaViewModel ||
-                viewModel is SettingsViewModel || viewModel is MediaViewerViewModel)
+                viewModel is SettingsViewModel || viewModel is MediaViewerViewModel ||
+                viewModel is PredictionsViewModel)
             {
                 SidebarVisibility = Visibility.Collapsed;
             }
@@ -143,6 +144,15 @@ namespace EndoscopyApp.ViewModels
 
             NavigateTo(new SettingsViewModel(this));
             PageTitle = "System Settings";
+        }
+
+        [RelayCommand]
+        public void NavigateToPredictions()
+        {
+            if (CurrentViewModel is PredictionsViewModel) return;
+            if (CurrentViewModel is LiveViewModel liveVmP) liveVmP.Cleanup();
+            NavigateTo(new PredictionsViewModel(this));
+            PageTitle = "AI Predictions";
         }
 
         [RelayCommand]
