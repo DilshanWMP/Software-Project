@@ -162,14 +162,48 @@ namespace EndoscopyApp.ViewModels
         }
 
         [RelayCommand]
-        public void ToggleRecording()
+        public void ToggleRecording() => ToggleRecordingCore(fromHardware: false);
+
+        /// <summary>Hardware push button: long press -> start / stop recording.</summary>
+        public void OnHardwareLongPress() => ToggleRecordingCore(fromHardware: true);
+
+        /// <summary>Hardware push button: short press -> snapshot (works while recording or not).</summary>
+        public void OnHardwareShortPress() => _ = TakeSnapshotCore(fromHardware: true);
+
+        /// <summary>
+        /// UI clicks keep the original MessageBox behaviour. Hardware presses must never
+        /// open a modal dialog (the operator cannot click it while holding the scope),
+        /// so they report problems with the on-screen toast instead.
+        /// </summary>
+        private void ReportProblem(string message, bool fromHardware)
         {
-            if (!IsCameraRunning) return;
+            if (fromHardware) NotificationRequested?.Invoke(message);
+            else MessageBox.Show(message);
+        }
+
+        private string GetPatientDirectory(Patient patient)
+        {
+            string baseDir = string.IsNullOrWhiteSpace(_settings.MediaPath)
+                ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media")
+                : _settings.MediaPath;
+
+            string patientDir = Path.Combine(baseDir, patient.Id.ToString());
+            Directory.CreateDirectory(patientDir);
+            return patientDir;
+        }
+
+        private void ToggleRecordingCore(bool fromHardware)
+        {
+            if (!IsCameraRunning)
+            {
+                if (fromHardware) NotificationRequested?.Invoke("Camera is not running");
+                return;
+            }
 
             // Check if patient is available for recording/snapshots, but allow viewing without one
             if (_currentPatient == null)
             {
-                MessageBox.Show("Please register or select a patient first.");
+                ReportProblem("Please register or select a patient first.", fromHardware);
                 return;
             }
 
@@ -178,26 +212,33 @@ namespace EndoscopyApp.ViewModels
                 _videoService.StopRecording();
                 IsRecording = false;
                 NotificationRequested?.Invoke("Recording Saved");
+                return;
             }
-            else
-            {
-                // Create directory for patient using settings path
-                string baseDir = string.IsNullOrWhiteSpace(_settings.MediaPath)
-                    ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media")
-                    : _settings.MediaPath;
 
-                string patientDir = Path.Combine(baseDir, _currentPatient.Id.ToString());
-                Directory.CreateDirectory(patientDir);
+            try
+            {
+                string patientDir = GetPatientDirectory(_currentPatient);
                 string fileName = $"REC_{DateTime.Now:yyyyMMdd_HHmmss}.avi";
                 string filePath = Path.Combine(patientDir, fileName);
 
-                _videoService.StartRecording(filePath);
-                IsRecording = true;
-
-                // Save metadata to DB (Placeholder implementation as DB service AddMedia not shown in previous step fully)
-                // media = new MediaFile { PatientId = _currentPatient.Id, FilePath = filePath, FileType = "Video" }
-                // _dbService.AddMedia(media);
+                if (_videoService.StartRecording(filePath))
+                {
+                    IsRecording = true;
+                    NotificationRequested?.Invoke("Recording Started");
+                }
+                else
+                {
+                    ReportProblem("Could not start recording (video file could not be created).", fromHardware);
+                }
             }
+            catch (Exception ex)
+            {
+                ReportProblem($"Could not start recording: {ex.Message}", fromHardware);
+            }
+
+            // Save metadata to DB (Placeholder implementation as DB service AddMedia not shown in previous step fully)
+            // media = new MediaFile { PatientId = _currentPatient.Id, FilePath = filePath, FileType = "Video" }
+            // _dbService.AddMedia(media);
         }
 
         [RelayCommand]
@@ -226,34 +267,54 @@ namespace EndoscopyApp.ViewModels
         }
 
         [RelayCommand]
-        public void TakeSnapshot()
-        {
-            if (!IsCameraRunning) return;
+        public Task TakeSnapshot() => TakeSnapshotCore(fromHardware: false);
 
-            if (_currentPatient == null)
+        private bool _isTakingSnapshot;
+
+        private async Task TakeSnapshotCore(bool fromHardware)
+        {
+            if (!IsCameraRunning)
             {
-                MessageBox.Show("Please register or select a patient first.");
+                if (fromHardware) NotificationRequested?.Invoke("Camera is not running");
                 return;
             }
 
-            var frame = _videoService.CaptureSnapshot();
-            if (!frame.Empty())
+            if (_currentPatient == null)
             {
-                // Create directory for patient using settings path
-                string baseDir = string.IsNullOrWhiteSpace(_settings.MediaPath)
-                    ? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Media")
-                    : _settings.MediaPath;
+                ReportProblem("Please register or select a patient first.", fromHardware);
+                return;
+            }
 
-                string patientDir = Path.Combine(baseDir, _currentPatient.Id.ToString());
-                Directory.CreateDirectory(patientDir);
-                string fileName = $"IMG_{DateTime.Now:yyyyMMdd_HHmmss}.jpg";
+            if (_isTakingSnapshot) return; // ignore presses while the previous one is saving
+            _isTakingSnapshot = true;
+            try
+            {
+                var patient = _currentPatient;
+                using var frame = await _videoService.CaptureSnapshotAsync();
+                if (frame.Empty())
+                {
+                    ReportProblem("Snapshot failed (no camera frame).", fromHardware);
+                    return;
+                }
+
+                string patientDir = GetPatientDirectory(patient);
+                // Milliseconds in the name so quick successive presses don't overwrite each other
+                string fileName = $"IMG_{DateTime.Now:yyyyMMdd_HHmmss_fff}.jpg";
                 string filePath = Path.Combine(patientDir, fileName);
 
-                frame.SaveImage(filePath);
+                await Task.Run(() => frame.SaveImage(filePath));
                 SnapshotFlashRequested?.Invoke();
                 NotificationRequested?.Invoke("Snapshot Saved");
 
                 // Save metadata to DB
+            }
+            catch (Exception ex)
+            {
+                ReportProblem($"Snapshot failed: {ex.Message}", fromHardware);
+            }
+            finally
+            {
+                _isTakingSnapshot = false;
             }
         }
 
