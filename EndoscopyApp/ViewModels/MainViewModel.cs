@@ -43,13 +43,13 @@ namespace EndoscopyApp.ViewModels
         /// <summary>Called when the window closes: finish any recording so the video file is valid.</summary>
         public void Shutdown()
         {
+            if (CurrentViewModel is RecordViewModel record) record.Cleanup();
+            else if (CurrentViewModel is LiveViewModel live) live.Cleanup();
+
             var button = ButtonService.Instance;
             button.ShortPressed -= OnHardwareShortPress;
             button.LongPressed -= OnHardwareLongPress;
-            button.Dispose();
-
-            if (CurrentViewModel is RecordViewModel record) record.Cleanup();
-            else if (CurrentViewModel is LiveViewModel live) live.Cleanup();
+            button.Dispose(); // also turns the recording LED off
         }
 
         [RelayCommand]
