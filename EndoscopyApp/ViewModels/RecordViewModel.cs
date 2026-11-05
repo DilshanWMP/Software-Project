@@ -49,6 +49,10 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private bool _isFullscreen;
 
+        // Keep the Arduino's green "recording live" LED in sync with the real recording
+        // state (covers start/stop, cancel, leaving the screen and closing the app).
+        partial void OnIsRecordingChanged(bool value) => ButtonService.Instance.SetRecording(value);
+
         public ObservableCollection<string> GenderOptions { get; } = new ObservableCollection<string> { "Male", "Female", "Other" };
 
         public RecordViewModel()
@@ -305,6 +309,7 @@ namespace EndoscopyApp.ViewModels
                 await Task.Run(() => frame.SaveImage(filePath));
                 SnapshotFlashRequested?.Invoke();
                 NotificationRequested?.Invoke("Snapshot Saved");
+                ButtonService.Instance.NotifySnapshot(); // green LED fast blink
 
                 // Save metadata to DB
             }

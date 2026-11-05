@@ -24,6 +24,10 @@ namespace EndoscopyApp.Services
     ///   Arduino -> PC : "LONG"      long press   -> start / stop recording
     ///   Arduino -> PC : "ENDO_BTN"  identification (sent at boot and as a reply to "?")
     ///   PC -> Arduino : "?"         "who are you?" (only used by auto-detect)
+    ///   PC -> Arduino : "1" / "0"   recording is live / stopped -> green LED on / off.
+    ///                               Re-sent every 2 s as a heartbeat; the Arduino turns
+    ///                               the LED off if it hears nothing for 5 s (app closed/crashed).
+    ///   PC -> Arduino : "p"         snapshot saved -> green LED blinks fast
     ///
     /// Short / long press timing and debouncing are done on the Arduino, so the
     /// app only reacts to finished events.
@@ -63,7 +67,49 @@ namespace EndoscopyApp.Services
         // is not allowed to publish status any more.
         private int _generation;
 
+        // Recording-LED state the Arduino should show, and a lock for writes from any thread.
+        private volatile bool _recordingLed;
+        private readonly object _writeLock = new();
+        private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(2);
+
         private ButtonService() { }
+
+        /// <summary>Tell the Arduino whether recording is live (green LED on/off).</summary>
+        public void SetRecording(bool isRecording)
+        {
+            _recordingLed = isRecording;
+            SendInBackground(RecordingCommand);
+        }
+
+        /// <summary>Tell the Arduino a snapshot was saved (green LED fast blink).</summary>
+        public void NotifySnapshot() => SendInBackground("p");
+
+        private string RecordingCommand => _recordingLed ? "1" : "0";
+
+        private void SendInBackground(string message)
+        {
+            var port = _port;
+            if (port == null || State != ButtonConnectionState.Connected) return;
+            // Don't block the UI thread on a slow / stuck port.
+            Task.Run(() => TryWrite(port, message));
+        }
+
+        private bool TryWrite(SerialPort port, string message)
+        {
+            lock (_writeLock)
+            {
+                try
+                {
+                    if (!port.IsOpen) return false;
+                    port.Write(message + "\n");
+                    return true;
+                }
+                catch
+                {
+                    return false; // read loop will notice a dead port and reconnect
+                }
+            }
+        }
 
         public static string[] GetAvailablePorts()
         {
@@ -169,7 +215,10 @@ namespace EndoscopyApp.Services
 
                     _port = port;
                     if (auto)
+                    {
                         SetStatus(gen, ButtonConnectionState.Connected, $"Connected to button on {port.PortName}", port.PortName);
+                        TryWrite(port, RecordingCommand);
+                    }
                     else
                         SetStatus(gen, ButtonConnectionState.Searching,
                             $"{port.PortName} open - waiting for the button device to respond (press the button to test)...", null);
@@ -207,9 +256,17 @@ namespace EndoscopyApp.Services
             var opened = DateTime.UtcNow;
             var lastPresenceCheck = DateTime.UtcNow;
             bool asked = false;
+            var lastHeartbeat = DateTime.UtcNow;
 
             while (!token.IsCancellationRequested)
             {
+                // Heartbeat: keep the Arduino's recording LED in sync (and alive).
+                if (verified && DateTime.UtcNow - lastHeartbeat >= HeartbeatInterval)
+                {
+                    lastHeartbeat = DateTime.UtcNow;
+                    TryWrite(port, RecordingCommand);
+                }
+
                 string? line = null;
                 try
                 {
@@ -222,7 +279,7 @@ namespace EndoscopyApp.Services
                     if (!verified && !asked && (DateTime.UtcNow - opened).TotalMilliseconds > 2500)
                     {
                         asked = true;
-                        try { port.WriteLine("?"); } catch (TimeoutException) { }
+                        TryWrite(port, "?");
                     }
 
                     // No data - make sure the device is still plugged in.
@@ -240,6 +297,14 @@ namespace EndoscopyApp.Services
                 {
                     verified = true;
                     SetStatus(gen, ButtonConnectionState.Connected, $"Connected to button on {portName}", portName);
+                    TryWrite(port, RecordingCommand);
+                    lastHeartbeat = DateTime.UtcNow;
+                }
+                else if (verified && string.Equals(line?.Trim(), IdentMessage, StringComparison.OrdinalIgnoreCase))
+                {
+                    // ENDO_BTN again = the board was reset and lost its LED state.
+                    TryWrite(port, RecordingCommand);
+                    lastHeartbeat = DateTime.UtcNow;
                 }
 
                 HandleLine(line, gen);
@@ -257,6 +322,7 @@ namespace EndoscopyApp.Services
             if (gen != Volatile.Read(ref _generation)) return;
             string line = (raw ?? "").Trim().ToUpperInvariant();
             if (line.Length == 0) return;
+            if (line.StartsWith('#')) return; // Arduino debug output (see EndoButton.ino)
 
             LastMessage = $"{line}  ({DateTime.Now:HH:mm:ss})";
 
@@ -382,6 +448,10 @@ namespace EndoscopyApp.Services
         {
             lock (_sync)
             {
+                // App is closing: turn the recording LED off before releasing the port.
+                _recordingLed = false;
+                var port = _port;
+                if (port != null) TryWrite(port, "0");
                 StopWorker();
             }
         }
