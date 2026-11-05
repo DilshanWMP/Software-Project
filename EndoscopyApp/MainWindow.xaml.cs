@@ -11,7 +11,9 @@ namespace EndoscopyApp
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new MainViewModel();
+            var viewModel = new MainViewModel();
+            DataContext = viewModel;
+            Closed += (_, _) => viewModel.Shutdown();
         }
     }
 }

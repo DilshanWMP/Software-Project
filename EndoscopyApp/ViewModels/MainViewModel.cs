@@ -22,6 +22,34 @@ namespace EndoscopyApp.ViewModels
             // Initial View
             CurrentViewModel = new LoginViewModel(this);
             SidebarVisibility = Visibility.Collapsed;
+
+            // Hardware (Arduino) push button - presses are only acted on in the Record screen.
+            var button = ButtonService.Instance;
+            button.ShortPressed += OnHardwareShortPress;
+            button.LongPressed += OnHardwareLongPress;
+            button.Configure(new SettingsService().LoadSettings().ButtonPort);
+        }
+
+        private void OnHardwareShortPress()
+        {
+            if (CurrentViewModel is RecordViewModel record) record.OnHardwareShortPress();
+        }
+
+        private void OnHardwareLongPress()
+        {
+            if (CurrentViewModel is RecordViewModel record) record.OnHardwareLongPress();
+        }
+
+        /// <summary>Called when the window closes: finish any recording so the video file is valid.</summary>
+        public void Shutdown()
+        {
+            var button = ButtonService.Instance;
+            button.ShortPressed -= OnHardwareShortPress;
+            button.LongPressed -= OnHardwareLongPress;
+            button.Dispose();
+
+            if (CurrentViewModel is RecordViewModel record) record.Cleanup();
+            else if (CurrentViewModel is LiveViewModel live) live.Cleanup();
         }
 
         [RelayCommand]
@@ -80,6 +108,10 @@ namespace EndoscopyApp.ViewModels
             else if (CurrentViewModel is RecordViewModel recordViewModel)
             {
                 recordViewModel.Cleanup();
+            }
+            else if (CurrentViewModel is SettingsViewModel settingsViewModel)
+            {
+                settingsViewModel.Cleanup();
             }
 
             CurrentViewModel = viewModel;

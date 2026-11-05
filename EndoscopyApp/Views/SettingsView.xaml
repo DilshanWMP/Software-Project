@@ -68,6 +68,70 @@
                     <ComboBoxItem Content="USB Camera 2 (Index 2)"/>
                 </ComboBox>
 
+                <!-- Hardware Push Button (Arduino) -->
+                <TextBlock Text="Hardware Push Button (Arduino COM Port)" FontSize="14" FontWeight="Medium" Foreground="#718096" Margin="0,15,0,5"/>
+                <TextBlock Text="Short press = snapshot   •   Long press = start / stop recording   (works on the Record screen)"
+                           FontSize="12" Foreground="#A0AEC0" Margin="0,0,0,8" TextWrapping="Wrap"/>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <ComboBox Grid.Column="0"
+                              ItemsSource="{Binding ButtonPorts}"
+                              DisplayMemberPath="Display"
+                              SelectedValuePath="Value"
+                              SelectedValue="{Binding SelectedButtonPort}"
+                              Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                              materialDesign:HintAssist.Hint="Select COM port"
+                              Padding="15" Height="50"/>
+
+                    <Button Grid.Column="1" Command="{Binding RefreshPortsCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="#E2E8F0" Foreground="#4A5568" BorderBrush="Transparent"
+                            Margin="10,0,0,0" Height="50" Padding="20,0"
+                            ToolTip="Re-scan COM ports (after plugging the Arduino in)">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Refresh" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Grid.Column="2" Command="{Binding ConnectButtonCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="#E2E8F0" Foreground="#4A5568" BorderBrush="Transparent"
+                            Margin="10,0,0,0" Height="50" Padding="20,0"
+                            ToolTip="Connect now and test the button before saving">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="UsbPort" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="Connect / Test" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <Border Background="#F7FAFC" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="8" Padding="15,10" Margin="0,0,0,20">
+                    <StackPanel>
+                        <DockPanel>
+                            <Ellipse DockPanel.Dock="Left" Width="10" Height="10" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="#A0AEC0"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsButtonConnected}" Value="True">
+                                                <Setter Property="Fill" Value="#38A169"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="{Binding ButtonStatus}" FontSize="13" Foreground="#4A5568" TextWrapping="Wrap"/>
+                        </DockPanel>
+                        <TextBlock Text="{Binding ButtonLastMessage}" FontSize="12" Foreground="#718096" Margin="20,4,0,0"/>
+                    </StackPanel>
+                </Border>
+
                 <Separator Margin="0,20,0,30" Background="#E2E8F0"/>
 
                 <!-- Security Section Header -->
