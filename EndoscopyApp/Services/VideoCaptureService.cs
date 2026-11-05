@@ -79,9 +79,12 @@ namespace EndoscopyApp.Services
         {
             if (!IsRunning) return;
 
+            StopRecording();
+
             IsRunning = false;
             _cts?.Cancel();
             try { _captureTask?.Wait(1000); } catch { /* Ignore cancellation */ }
+            Interlocked.Exchange(ref _snapshotRequest, null)?.TrySetResult(new Mat());
 
             _capture?.Release();
             _capture?.Dispose();
@@ -89,46 +92,78 @@ namespace EndoscopyApp.Services
         }
 
         private VideoWriter? _writer;
+        // Guards _writer: the capture loop writes frames on a background thread while
+        // Start/StopRecording are called from the UI thread (or the hardware button).
+        private readonly object _writerLock = new();
         public bool IsRecording { get; private set; }
 
         private double _recordedFps = 20.0;
 
-        public void StartRecording(string filePath)
+        // Pending snapshot request, fulfilled by the capture loop with the next frame.
+        // VideoCapture is not thread-safe, so we never call _capture.Read() from a second thread.
+        private TaskCompletionSource<Mat>? _snapshotRequest;
+
+        /// <summary>Returns true if the video file was opened and recording started.</summary>
+        public bool StartRecording(string filePath)
         {
-            if (IsRecording || _capture == null) return;
-
-            // Use a stable 20 FPS for recording to balance quality and file size
-            _recordedFps = 20.0;
-            var fourcc = VideoWriter.FourCC('M', 'J', 'P', 'G');
-            var size = new Size(_capture.FrameWidth, _capture.FrameHeight);
-
-            _writer = new VideoWriter(filePath, fourcc, _recordedFps, size);
-
-            if (_writer.IsOpened())
+            lock (_writerLock)
             {
-                IsRecording = true;
+                if (IsRecording) return true;
+                if (_capture == null || !IsRunning) return false;
+
+                // Use a stable 20 FPS for recording to balance quality and file size
+                _recordedFps = 20.0;
+                var fourcc = VideoWriter.FourCC('M', 'J', 'P', 'G');
+                var size = new Size(_capture.FrameWidth, _capture.FrameHeight);
+
+                var writer = new VideoWriter(filePath, fourcc, _recordedFps, size);
+                if (!writer.IsOpened())
+                {
+                    writer.Dispose();
+                    return false;
+                }
+
+                _writer = writer;
                 _lastWriteTime = DateTime.Now;
+                IsRecording = true;
+                return true;
             }
         }
 
         public void StopRecording()
         {
-            if (!IsRecording) return;
+            lock (_writerLock)
+            {
+                if (!IsRecording) return;
 
-            IsRecording = false;
-            _writer?.Release();
-            _writer?.Dispose();
-            _writer = null;
+                IsRecording = false;
+                _writer?.Release();
+                _writer?.Dispose();
+                _writer = null;
+            }
         }
 
-        public Mat CaptureSnapshot()
+        /// <summary>
+        /// Grabs the next frame produced by the capture loop. Returns an empty Mat
+        /// if the camera is not running or no frame arrives within the timeout.
+        /// </summary>
+        public async Task<Mat> CaptureSnapshotAsync(int timeoutMs = 1500)
         {
-            if (_capture != null && _capture.IsOpened())
+            if (!IsRunning) return new Mat();
+
+            // Overlapping requests share the same pending request (and therefore the same frame).
+            var tcs = new TaskCompletionSource<Mat>(TaskCreationOptions.RunContinuationsAsynchronously);
+            tcs = Interlocked.CompareExchange(ref _snapshotRequest, tcs, null) ?? tcs;
+
+            var finished = await Task.WhenAny(tcs.Task, Task.Delay(timeoutMs));
+            if (finished == tcs.Task)
             {
-                var frame = new Mat();
-                _capture.Read(frame);
-                return frame;
+                var shared = await tcs.Task;
+                return shared.Empty() ? new Mat() : shared.Clone(); // each caller owns its copy
             }
+
+            Interlocked.CompareExchange(ref _snapshotRequest, null, tcs);
+            tcs.TrySetResult(new Mat());
             return new Mat();
         }
 
@@ -142,19 +177,26 @@ namespace EndoscopyApp.Services
                 if (_capture != null && _capture.Read(frame) && !frame.Empty())
                 {
                     // Recording - ensure we write at the correct intervals to maintain real-time speed
-                    if (IsRecording && _writer != null && _writer.IsOpened())
-                    {
-                        var now = DateTime.Now;
-                        var elapsed = (now - _lastWriteTime).TotalMilliseconds;
-                        var frameInterval = 1000.0 / _recordedFps;
+                    // Snapshot request (from UI button or hardware button)
+                    var request = Interlocked.Exchange(ref _snapshotRequest, null);
+                    request?.TrySetResult(frame.Clone());
 
-                        // If the camera is slow, we "stuff" or duplicate frames to fill the time gap.
-                        // This prevents the video from playing back fast.
-                        while (elapsed >= frameInterval)
+                    lock (_writerLock)
+                    {
+                        if (IsRecording && _writer != null && _writer.IsOpened())
                         {
-                            _writer.Write(frame);
-                            elapsed -= frameInterval;
-                            _lastWriteTime = _lastWriteTime.AddMilliseconds(frameInterval);
+                            var now = DateTime.Now;
+                            var elapsed = (now - _lastWriteTime).TotalMilliseconds;
+                            var frameInterval = 1000.0 / _recordedFps;
+
+                            // If the camera is slow, we "stuff" or duplicate frames to fill the time gap.
+                            // This prevents the video from playing back fast.
+                            while (elapsed >= frameInterval)
+                            {
+                                _writer.Write(frame);
+                                elapsed -= frameInterval;
+                                _lastWriteTime = _lastWriteTime.AddMilliseconds(frameInterval);
+                            }
                         }
                     }
 
