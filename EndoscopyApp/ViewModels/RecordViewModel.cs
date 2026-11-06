@@ -40,6 +40,9 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private bool _isRecording;
 
+        // Path of the video being recorded, so Cancel can delete it.
+        private string _currentVideoFilePath = "";
+
         [ObservableProperty]
         private string _patientId = "000000";
 
@@ -227,6 +230,7 @@ namespace EndoscopyApp.ViewModels
 
                 if (_videoService.StartRecording(filePath))
                 {
+                    _currentVideoFilePath = filePath;
                     IsRecording = true;
                     NotificationRequested?.Invoke("Recording Started");
                 }
@@ -246,15 +250,48 @@ namespace EndoscopyApp.ViewModels
         }
 
         [RelayCommand]
-        public void CancelRecording()
+        public async Task CancelRecording()
         {
-            if (IsRecording)
+            if (!IsRecording) return;
+
+            var result = MessageBox.Show(
+                "Are you sure you want to cancel? If you cancel, the recorded video will be deleted.",
+                "Cancel Recording", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result != MessageBoxResult.Yes) return; // keep recording
+
+            // The hardware button can stop & save the recording while the dialog is open;
+            // in that case the video was kept on purpose, so don't delete it.
+            if (!IsRecording) return;
+
+            string filePath = _currentVideoFilePath;
+            _videoService.StopRecording();
+            IsRecording = false;
+
+            if (await TryDeleteFileAsync(filePath))
+                NotificationRequested?.Invoke("Recording Canceled");
+            else
+                NotificationRequested?.Invoke("Recording canceled, but the video file could not be deleted");
+        }
+
+        private static async Task<bool> TryDeleteFileAsync(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return true;
+
+            // The writer is released synchronously, but retry briefly in case Windows
+            // (antivirus, indexer) still holds the file for a moment.
+            for (int attempt = 0; attempt < 5; attempt++)
             {
-                _videoService.StopRecording();
-                IsRecording = false;
-                // In a real app, we might delete the temporary file here
-                MessageBox.Show("Recording Cancelled.");
+                try
+                {
+                    File.Delete(filePath);
+                    return true;
+                }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+
+                await Task.Delay(200);
             }
+            return false;
         }
 
         [RelayCommand]
