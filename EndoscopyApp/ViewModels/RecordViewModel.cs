@@ -225,6 +225,15 @@ namespace EndoscopyApp.ViewModels
             try
             {
                 string patientDir = GetPatientDirectory(_currentPatient);
+
+                long? freeBytes = GetFreeBytes(patientDir);
+                if (freeBytes < MinFreeToStartRecordingBytes)
+                {
+                    ReportProblem($"Not enough disk space to record ({FormatGb(freeBytes.Value)} free). " +
+                                  "Free up space or change the save folder in Settings.", fromHardware);
+                    return;
+                }
+
                 string fileName = $"REC_{DateTime.Now:yyyyMMdd_HHmmss}.avi";
                 string filePath = Path.Combine(patientDir, fileName);
 
@@ -232,7 +241,10 @@ namespace EndoscopyApp.ViewModels
                 {
                     _currentVideoFilePath = filePath;
                     IsRecording = true;
-                    NotificationRequested?.Invoke("Recording Started");
+                    StartDiskSpaceTimer();
+                    NotificationRequested?.Invoke(freeBytes < LowDiskWarningBytes
+                        ? $"Recording Started - low disk space ({FormatGb(freeBytes.Value)} free)"
+                        : "Recording Started");
                 }
                 else
                 {
@@ -331,6 +343,15 @@ namespace EndoscopyApp.ViewModels
             try
             {
                 var patient = _currentPatient;
+                string patientDir = GetPatientDirectory(patient);
+
+                long? freeBytes = GetFreeBytes(patientDir);
+                if (freeBytes < MinFreeForSnapshotBytes)
+                {
+                    ReportProblem($"Not enough disk space to save the snapshot ({freeBytes.Value / (1024 * 1024)} MB free).", fromHardware);
+                    return;
+                }
+
                 using var frame = await _videoService.CaptureSnapshotAsync();
                 if (frame.Empty())
                 {
@@ -338,7 +359,6 @@ namespace EndoscopyApp.ViewModels
                     return;
                 }
 
-                string patientDir = GetPatientDirectory(patient);
                 // Milliseconds in the name so quick successive presses don't overwrite each other
                 string fileName = $"IMG_{DateTime.Now:yyyyMMdd_HHmmss_fff}.jpg";
                 string filePath = Path.Combine(patientDir, fileName);
@@ -373,8 +393,70 @@ namespace EndoscopyApp.ViewModels
             return true;
         }
 
+        // ---------------- Disk space ----------------
+        // 1 GB of video lasts roughly 8-15 minutes (720p webcam ~60 MB/min, 1080p more).
+
+        private const long OneGb = 1024L * 1024 * 1024;
+        private const long LowDiskWarningBytes = 10 * OneGb;           // warn when starting a recording
+        private const long MinFreeToStartRecordingBytes = 2 * OneGb;   // refuse to start a recording
+        private const long StopRecordingBelowBytes = 1 * OneGb;        // stop & save while recording
+        private const long MinFreeForSnapshotBytes = 100L * 1024 * 1024;
+
+        private System.Windows.Threading.DispatcherTimer? _diskSpaceTimer;
+
+        /// <summary>Free space on the drive holding <paramref name="path"/>, or null if it can't be read (e.g. network share).</summary>
+        private static long? GetFreeBytes(string path)
+        {
+            try
+            {
+                string? root = Path.GetPathRoot(Path.GetFullPath(path));
+                if (string.IsNullOrEmpty(root) || root.StartsWith(@"\\")) return null;
+                return new DriveInfo(root).AvailableFreeSpace;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static string FormatGb(long bytes) => $"{bytes / (double)OneGb:0.0} GB";
+
+        private void StartDiskSpaceTimer()
+        {
+            if (_diskSpaceTimer == null)
+            {
+                _diskSpaceTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+                _diskSpaceTimer.Tick += OnDiskSpaceTimerTick;
+            }
+            _diskSpaceTimer.Start();
+        }
+
+        private void OnDiskSpaceTimerTick(object? sender, EventArgs e)
+        {
+            // Recording may have been stopped elsewhere (stop button, cancel, crash handler).
+            if (!IsRecording)
+            {
+                _diskSpaceTimer?.Stop();
+                return;
+            }
+
+            long? freeBytes = GetFreeBytes(_currentVideoFilePath);
+            if (freeBytes == null || freeBytes >= StopRecordingBelowBytes) return;
+
+            // Stop before the disk is full so the video file is finished and stays playable.
+            _diskSpaceTimer?.Stop();
+            _videoService.StopRecording();
+            IsRecording = false;
+            NotificationRequested?.Invoke("Recording Saved");
+            MessageBox.Show($"Recording stopped and saved because the disk is almost full ({FormatGb(freeBytes.Value)} free).\n\n" +
+                            "Free up space or change the save folder in Settings before recording again.",
+                            "Disk Almost Full", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
         public void Cleanup()
         {
+            _diskSpaceTimer?.Stop();
+
             if (IsRecording)
             {
                 _videoService.StopRecording();
