@@ -17,8 +17,13 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private Visibility _sidebarVisibility = Visibility.Collapsed;
 
+        /// <summary>The app's main view model, used by the crash handler in App.xaml.cs.</summary>
+        public static MainViewModel? Current { get; private set; }
+
         public MainViewModel()
         {
+            Current = this;
+
             // Initial View
             CurrentViewModel = new LoginViewModel(this);
             SidebarVisibility = Visibility.Collapsed;
@@ -38,6 +43,15 @@ namespace EndoscopyApp.ViewModels
         private void OnHardwareLongPress()
         {
             if (CurrentViewModel is RecordViewModel record) record.OnHardwareLongPress();
+        }
+
+        /// <summary>
+        /// Called by the crash handler: finish any recording so the video file stays playable.
+        /// Returns true if a recording was saved.
+        /// </summary>
+        public bool SaveRecordingAfterError()
+        {
+            return CurrentViewModel is RecordViewModel record && record.SaveRecordingAfterError();
         }
 
         /// <summary>Called when the window closes: finish any recording so the video file is valid.</summary>

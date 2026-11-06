@@ -360,6 +360,19 @@ namespace EndoscopyApp.ViewModels
             }
         }
 
+        /// <summary>
+        /// Called by the crash handler (possibly from a background thread): stop the
+        /// recording so the video file is finalized. Returns true if one was running.
+        /// </summary>
+        public bool SaveRecordingAfterError()
+        {
+            if (!_videoService.IsRecording) return false;
+
+            _videoService.StopRecording();
+            IsRecording = false;
+            return true;
+        }
+
         public void Cleanup()
         {
             if (IsRecording)
