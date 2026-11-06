@@ -502,3 +502,7 @@ lap-predictions/models/*.pt
 lap-predictions/models/*.onnx
 lap-predictions/__pycache__/
 lap-predictions/*/__pycache__/
+
+# Claude Code local notes (not shared)
+internal/
+CLAUDE.md
