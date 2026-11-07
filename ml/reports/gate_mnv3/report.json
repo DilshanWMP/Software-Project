@@ -1,0 +1,71 @@
+{
+  "run": "gate_mnv3",
+  "task": "gate",
+  "arch": "mobilenetv3_small_100",
+  "img_size": 224,
+  "classes": [
+    "not_endoscopy",
+    "endoscopy"
+  ],
+  "checkpoint": "ml\\checkpoints\\gate_mnv3\\best.pt",
+  "best_epoch": 5,
+  "smoke_limit": null,
+  "calibration": {
+    "temperature": 0.0530688650906086,
+    "endoscopy_threshold": 0.9,
+    "threshold_rule": "largest t accepting >= 0.99 of val endoscopy"
+  },
+  "val": {
+    "n_pos": 2583,
+    "n_neg": 810,
+    "positives_accepted": 1.0,
+    "negatives_rejected": 1.0,
+    "auc": 1.0
+  },
+  "test": {
+    "n_pos": 2581,
+    "n_neg": 810,
+    "positives_accepted": 1.0,
+    "negatives_rejected": 0.9987654320987654,
+    "auc": 0.9993827160493827
+  },
+  "test_stress": {
+    "n_pos": 2581,
+    "n_neg": 810,
+    "positives_accepted": 0.9910887253002713,
+    "negatives_rejected": 0.9962962962962963,
+    "auc": 0.9986788544970129
+  },
+  "media_snapshots": [
+    {
+      "file": "1/IMG_20260502_143309.jpg",
+      "p_endo": 1.0,
+      "accepted": true
+    },
+    {
+      "file": "1/IMG_20260502_154647.jpg",
+      "p_endo": 1.0,
+      "accepted": true
+    },
+    {
+      "file": "1/IMG_20260502_154651.jpg",
+      "p_endo": 1.0,
+      "accepted": true
+    },
+    {
+      "file": "1/IMG_20261106_121734_668.jpg",
+      "p_endo": 0.0,
+      "accepted": false
+    },
+    {
+      "file": "1/IMG_20261106_121735_796.jpg",
+      "p_endo": 0.0,
+      "accepted": false
+    },
+    {
+      "file": "1/IMG_20261106_121737_134.jpg",
+      "p_endo": 0.0,
+      "accepted": false
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "model_version": "endo_gate_v1",
+  "architecture": "mobilenetv3_small_100",
+  "input_size": 224,
+  "temperature": 0.0530688650906086,
+  "endoscopy_threshold": 0.9,
+  "created": "2026-11-08T02:23:19"
+}

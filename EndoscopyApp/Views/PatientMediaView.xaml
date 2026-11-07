@@ -157,6 +157,18 @@
                                                     <Button Grid.Row="0" Command="{Binding DataContext.ViewMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Padding="0" BorderThickness="0" Style="{StaticResource MaterialDesignFlatButton}" Height="200" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
                                                         <Grid Background="#F8FAFC">
                                                             <Image Source="{Binding Thumbnail}" Stretch="UniformToFill"/>
+
+                                                            <!-- Saved AI analysis badge -->
+                                                            <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10"
+                                                                    Background="#F2FFFFFF" CornerRadius="10" Padding="8,3"
+                                                                    BorderBrush="{Binding AiSummaryBrush}" BorderThickness="1"
+                                                                    Visibility="{Binding HasAiSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <StackPanel Orientation="Horizontal">
+                                                                    <materialDesign:PackIcon Kind="Brain" Width="14" Height="14" Foreground="{Binding AiSummaryBrush}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                                    <TextBlock Text="{Binding AiSummary}" Foreground="{Binding AiSummaryBrush}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"
+                                                                               MaxWidth="220" TextTrimming="CharacterEllipsis"/>
+                                                                </StackPanel>
+                                                            </Border>
                                                         </Grid>
                                                     </Button>
 
@@ -178,12 +190,18 @@
                                                                 </ToggleButton.Template>
                                                                 <materialDesign:PackIcon Kind="DotsVertical" Width="24" Height="24"/>
                                                             </ToggleButton>
-                                                            <Popup IsOpen="{Binding IsChecked, ElementName=MenuButtonSnapshot}" StaysOpen="False" PlacementTarget="{Binding ElementName=MenuButtonSnapshot}" Placement="Bottom" HorizontalOffset="-110" AllowsTransparency="True" PopupAnimation="Fade">
+                                                            <Popup IsOpen="{Binding IsChecked, ElementName=MenuButtonSnapshot}" StaysOpen="False" PlacementTarget="{Binding ElementName=MenuButtonSnapshot}" Placement="Bottom" HorizontalOffset="-150" AllowsTransparency="True" PopupAnimation="Fade">
                                                                 <Border Background="White" CornerRadius="12" Padding="4" Margin="10">
                                                                     <Border.Effect>
                                                                         <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.15" Color="Black"/>
                                                                     </Border.Effect>
-                                                                    <StackPanel Width="140">
+                                                                    <StackPanel Width="180">
+                                                                        <Button Command="{Binding DataContext.AnalyseMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#2D3748" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42" Margin="0,0,0,2">
+                                                                            <StackPanel Orientation="Horizontal">
+                                                                                <materialDesign:PackIcon Kind="Brain" Margin="0,0,12,0" Foreground="#4C51BF" VerticalAlignment="Center" Width="20" Height="20"/>
+                                                                                <TextBlock Text="Analyse with AI" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="14"/>
+                                                                            </StackPanel>
+                                                                        </Button>
                                                                         <Button Command="{Binding DataContext.DownloadMediaCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Background="Transparent" BorderThickness="0" Foreground="#2D3748" HorizontalContentAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8" Height="42">
                                                                             <StackPanel Orientation="Horizontal">
                                                                                 <materialDesign:PackIcon Kind="Download" Margin="0,0,12,0" Foreground="#3182CE" VerticalAlignment="Center" Width="20" Height="20"/>

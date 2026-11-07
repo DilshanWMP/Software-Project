@@ -1,0 +1,5 @@
+{
+  "findings_model_version": "gi_findings_v1",
+  "gate_model_version": "endo_gate_v1",
+  "note": "cases.json probabilities come from these ONNX files via onnxruntime CPU; regenerate with ml/src/make_golden.py after every export."
+}

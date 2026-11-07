@@ -1,0 +1,23 @@
+{
+  "classes": [
+    "no_abnormal_finding",
+    "inflammation",
+    "bleeding",
+    "polyp",
+    "barretts",
+    "possible_tumour",
+    "other_procedure"
+  ],
+  "sources": [
+    "hyperkvasir",
+    "gastrovision"
+  ],
+  "dropped_super_classes": [
+    "ulcer",
+    "varices"
+  ],
+  "min_class_images": 80,
+  "dup_hamming": 4,
+  "group_hamming": 10,
+  "test_csv_sha256": "d2b8dc6e92356df6cbaaafbf57d6b6f250cb3ee804a7dc70411223625182c5d9"
+}
