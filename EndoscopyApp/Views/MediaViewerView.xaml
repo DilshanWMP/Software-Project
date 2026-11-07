@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:EndoscopyApp.Views.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="768" d:DesignWidth="1024"
              Background="#F7FAFC">
@@ -25,40 +26,56 @@
             </StackPanel>
         </Grid>
 
-        <!-- Content Card -->
-        <materialDesign:Card Grid.Row="1" Background="Black" UniformCornerRadius="12">
-            <Grid>
-                <!-- Image Viewer -->
-                <Image Source="{Binding Media.FilePath}" Stretch="Uniform">
-                    <Image.Style>
-                        <Style TargetType="Image">
-                            <Setter Property="Visibility" Value="Visible"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Media.IsVideo}" Value="True">
-                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
-                </Image>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- Video Player -->
-                <MediaElement Source="{Binding Media.FilePath}" 
-                              LoadedBehavior="Play"
-                              UnloadedBehavior="Stop"
-                              Stretch="Uniform">
-                    <MediaElement.Style>
-                        <Style TargetType="MediaElement">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding Media.IsVideo}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </MediaElement.Style>
-                </MediaElement>
-            </Grid>
-        </materialDesign:Card>
+            <!-- Content Card -->
+            <materialDesign:Card Grid.Column="0" Background="Black" UniformCornerRadius="12">
+                <Grid>
+                    <!-- Image Viewer (loaded into memory, file not locked) -->
+                    <Image Source="{Binding ImageSource}" Stretch="Uniform">
+                        <Image.Style>
+                            <Style TargetType="Image">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Media.IsVideo}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Image.Style>
+                    </Image>
+
+                    <!-- AI heatmap overlay: same pixel size as the image + same Stretch, so it lines up exactly -->
+                    <Image Source="{Binding Ai.HeatmapImage}" Stretch="Uniform" IsHitTestVisible="False"
+                           Visibility="{Binding Ai.ShowHeatmap, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed, TargetNullValue=Collapsed}"/>
+
+                    <!-- Video Player -->
+                    <MediaElement Source="{Binding VideoPath}" 
+                                  LoadedBehavior="Play"
+                                  UnloadedBehavior="Stop"
+                                  Stretch="Uniform">
+                        <MediaElement.Style>
+                            <Style TargetType="MediaElement">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Media.IsVideo}" Value="True">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </MediaElement.Style>
+                    </MediaElement>
+                </Grid>
+            </materialDesign:Card>
+
+            <!-- AI panel (still images only) -->
+            <controls:AiResultPanel Grid.Column="1" Width="360" Margin="20,0,0,0"
+                                    DataContext="{Binding Ai}"
+                                    Visibility="{Binding DataContext.ShowAiPanel, RelativeSource={RelativeSource AncestorType=Grid}, Converter={StaticResource BooleanToVisibilityConverter}, FallbackValue=Collapsed}"/>
+        </Grid>
     </Grid>
 </UserControl>

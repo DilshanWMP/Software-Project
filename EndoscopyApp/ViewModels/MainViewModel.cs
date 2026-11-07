@@ -106,10 +106,10 @@ namespace EndoscopyApp.ViewModels
             PageTitle = "Recorded Media";
         }
 
-        public void NavigateToMediaViewer(MediaFileViewModel media, Patient patient)
+        public void NavigateToMediaViewer(MediaFileViewModel media, Patient patient, bool autoAnalyse = false)
         {
             if (CurrentViewModel is LiveViewModel liveVm) liveVm.Cleanup();
-            NavigateTo(new MediaViewerViewModel(this, media, patient));
+            NavigateTo(new MediaViewerViewModel(this, media, patient, autoAnalyse));
             PageTitle = "Media Viewer";
         }
 
@@ -198,7 +198,7 @@ namespace EndoscopyApp.ViewModels
             if (CurrentViewModel is PredictionsViewModel) return;
             if (CurrentViewModel is LiveViewModel liveVmP) liveVmP.Cleanup();
             NavigateTo(new PredictionsViewModel(this));
-            PageTitle = "AI Predictions";
+            PageTitle = "AI Analysis";
         }
 
         [RelayCommand]

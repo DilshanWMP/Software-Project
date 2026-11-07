@@ -1,0 +1,202 @@
+[
+ {
+  "image": "test_no_abnormal_finding.jpg",
+  "crop": [
+   0,
+   0,
+   511,
+   423
+  ],
+  "findings_probs": [
+   0.990181,
+   0.001713,
+   0.001487,
+   0.001018,
+   0.002645,
+   0.00153,
+   0.001426
+  ],
+  "gate_p_endo": 1.0,
+  "top_key": "no_abnormal_finding"
+ },
+ {
+  "image": "test_polyp.jpg",
+  "crop": [
+   0,
+   0,
+   511,
+   468
+  ],
+  "findings_probs": [
+   0.001109,
+   0.001225,
+   0.001725,
+   0.991043,
+   0.00139,
+   0.001125,
+   0.002383
+  ],
+  "gate_p_endo": 1.0,
+  "top_key": "polyp"
+ },
+ {
+  "image": "test_inflammation.jpg",
+  "crop": [
+   0,
+   0,
+   511,
+   434
+  ],
+  "findings_probs": [
+   0.00157,
+   0.984383,
+   0.002824,
+   0.002532,
+   0.002707,
+   0.003371,
+   0.002613
+  ],
+  "gate_p_endo": 1.0,
+  "top_key": "inflammation"
+ },
+ {
+  "image": "test_other_procedure.jpg",
+  "crop": [
+   0,
+   0,
+   511,
+   483
+  ],
+  "findings_probs": [
+   0.002093,
+   0.00419,
+   0.002336,
+   0.007765,
+   0.003194,
+   0.006132,
+   0.97429
+  ],
+  "gate_p_endo": 1.0,
+  "top_key": "other_procedure"
+ },
+ {
+  "image": "test_barretts.jpg",
+  "crop": [
+   0,
+   0,
+   511,
+   423
+  ],
+  "findings_probs": [
+   0.022839,
+   0.913898,
+   0.004638,
+   0.025067,
+   0.021952,
+   0.007707,
+   0.0039
+  ],
+  "gate_p_endo": 1.0,
+  "top_key": "inflammation"
+ },
+ {
+  "image": "nonendo_IMG_20261106_121734_668.jpg",
+  "crop": [
+   0,
+   0,
+   511,
+   287
+  ],
+  "findings_probs": [
+   0.420656,
+   0.004373,
+   0.022495,
+   0.058636,
+   0.09649,
+   0.01225,
+   0.385099
+  ],
+  "gate_p_endo": 0.0,
+  "top_key": "no_abnormal_finding"
+ },
+ {
+  "image": "nonendo_IMG_20261106_121735_796.jpg",
+  "crop": [
+   0,
+   0,
+   511,
+   287
+  ],
+  "findings_probs": [
+   0.541804,
+   0.003652,
+   0.022564,
+   0.146721,
+   0.089727,
+   0.010398,
+   0.185135
+  ],
+  "gate_p_endo": 0.0,
+  "top_key": "no_abnormal_finding"
+ },
+ {
+  "image": "nonendo_coco_000000107554.jpg",
+  "crop": [
+   0,
+   0,
+   511,
+   383
+  ],
+  "findings_probs": [
+   0.13063,
+   0.00326,
+   0.007337,
+   0.011238,
+   0.012035,
+   0.007553,
+   0.827947
+  ],
+  "gate_p_endo": 0.0,
+  "top_key": "other_procedure"
+ },
+ {
+  "image": "bordered_capture.jpg",
+  "crop": [
+   3,
+   4,
+   596,
+   470
+  ],
+  "findings_probs": [
+   0.989155,
+   0.001428,
+   0.002147,
+   0.001513,
+   0.002428,
+   0.001603,
+   0.001726
+  ],
+  "gate_p_endo": 1.0,
+  "top_key": "no_abnormal_finding"
+ },
+ {
+  "image": "dark_frame.jpg",
+  "crop": [
+   0,
+   0,
+   319,
+   239
+  ],
+  "findings_probs": [
+   0.903551,
+   0.012584,
+   0.005831,
+   0.037013,
+   0.009683,
+   0.011763,
+   0.019575
+  ],
+  "gate_p_endo": 0.0,
+  "top_key": "no_abnormal_finding"
+ }
+]

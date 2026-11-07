@@ -494,15 +494,16 @@ models/*.onnx
 __pycache__/
 *.ipynb_checkpoints
 
-# Python ML Environment & Data (lap-predictions)
-lap-predictions/.venv/
-lap-predictions/data/
-lap-predictions/runs/
-lap-predictions/models/*.pt
-lap-predictions/models/*.onnx
-lap-predictions/__pycache__/
-lap-predictions/*/__pycache__/
 
 # Claude Code local notes (not shared)
 internal/
 CLAUDE.md
+
+# GI findings AI: training workspace (large, local only)
+ml/.venv/
+ml/data/
+ml/runs/
+ml/checkpoints/
+ml/**/__pycache__/
+# ...but the final, small ONNX models ship with the app
+!EndoscopyApp/AiModels/*.onnx

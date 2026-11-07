@@ -107,7 +107,7 @@
                     </materialDesign:Card>
                 </Button>
 
-                <!-- AI Predictions Card -->
+                <!-- AI Analysis Card -->
                 <Button Command="{Binding NavigateToPredictionsCommand}" 
                         Height="280" Margin="15"
                         Background="#6B46C1" Padding="0"
@@ -119,8 +119,8 @@
                                 <Border Background="#3EFFFFFF" CornerRadius="30" Width="80" Height="80" Margin="0,0,0,25">
                                     <materialDesign:PackIcon Kind="Brain" Width="40" Height="40" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/>
                                 </Border>
-                                <TextBlock Text="AI Predictions" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                <TextBlock Text="Analyze laparoscopy snapshots" Foreground="#E2E8F0" FontSize="14" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="200"/>
+                                <TextBlock Text="AI Analysis" Foreground="White" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                <TextBlock Text="Analyse endoscopy snapshots" Foreground="#E2E8F0" FontSize="14" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="200"/>
                             </StackPanel>
                         </Grid>
                     </materialDesign:Card>

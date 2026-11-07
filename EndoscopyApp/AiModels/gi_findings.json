@@ -1,0 +1,74 @@
+{
+  "model_version": "gi_findings_v1",
+  "architecture": "efficientnet_b3",
+  "input_size": 384,
+  "temperature": 0.8707855343818665,
+  "uncertain_below": 0.67,
+  "classes": [
+    {
+      "index": 0,
+      "key": "no_abnormal_finding",
+      "display": "No abnormal finding",
+      "abnormal": false,
+      "threshold": 0.3
+    },
+    {
+      "index": 1,
+      "key": "inflammation",
+      "display": "Inflammation",
+      "abnormal": true,
+      "threshold": 0.05
+    },
+    {
+      "index": 2,
+      "key": "bleeding",
+      "display": "Bleeding / blood",
+      "abnormal": true,
+      "threshold": 0.05
+    },
+    {
+      "index": 3,
+      "key": "polyp",
+      "display": "Polyp",
+      "abnormal": true,
+      "threshold": 0.56
+    },
+    {
+      "index": 4,
+      "key": "barretts",
+      "display": "Barrett's oesophagus",
+      "abnormal": true,
+      "threshold": 0.05
+    },
+    {
+      "index": 5,
+      "key": "possible_tumour",
+      "display": "Possible tumour",
+      "abnormal": true,
+      "threshold": 0.05
+    },
+    {
+      "index": 6,
+      "key": "other_procedure",
+      "display": "Procedure-related (dye, resection, tools)",
+      "abnormal": false,
+      "threshold": 0.14
+    }
+  ],
+  "preprocess": {
+    "border_crop": true,
+    "border_gray_threshold": 20,
+    "border_min_fraction": 0.02,
+    "border_min_keep": 0.25,
+    "resize": "bilinear_stretch"
+  },
+  "quality": {
+    "min_side_px": 128,
+    "dark_mean_below": 25,
+    "bright_mean_above": 235,
+    "blur_laplacian_var_below": 15.0,
+    "analysis_long_side_px": 512
+  },
+  "trained_on": "HyperKvasir labelled + GastroVision (super-classes)",
+  "created": "2026-11-08T02:23:03"
+}

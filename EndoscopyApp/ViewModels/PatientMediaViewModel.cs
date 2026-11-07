@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EndoscopyApp.Models;
 using EndoscopyApp.Services;
+using EndoscopyApp.Services.Ai;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Collections.Generic;
@@ -125,6 +126,7 @@ namespace EndoscopyApp.ViewModels
                     try
                     {
                         File.Delete(media.FilePath);
+                        if (!media.IsVideo) AnalysisStore.Delete(media.FilePath); // saved AI result + heatmap
                         Videos.Remove(media);
                         Snapshots.Remove(media);
                     }
@@ -142,6 +144,17 @@ namespace EndoscopyApp.ViewModels
             if (File.Exists(media.FilePath))
             {
                 _mainViewModel.NavigateToMediaViewer(media, Patient);
+            }
+        }
+
+        /// <summary>Opens a snapshot in the Media Viewer and runs the AI straight away (still images only).</summary>
+        [RelayCommand]
+        private void AnalyseMedia(MediaFileViewModel media)
+        {
+            if (media == null || media.IsVideo) return;
+            if (File.Exists(media.FilePath))
+            {
+                _mainViewModel.NavigateToMediaViewer(media, Patient, autoAnalyse: true);
             }
         }
     }
@@ -163,6 +176,16 @@ namespace EndoscopyApp.ViewModels
         [ObservableProperty]
         private bool _isVideo;
 
+        /// <summary>Badge text for a saved AI analysis, e.g. "AI: Polyp". Null when none (or for videos).</summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasAiSummary))]
+        private string? _aiSummary;
+
+        [ObservableProperty]
+        private System.Windows.Media.Brush? _aiSummaryBrush;
+
+        public bool HasAiSummary => !string.IsNullOrEmpty(AiSummary);
+
         public MediaFileViewModel(string filePath)
         {
             _filePath = filePath;
@@ -173,6 +196,28 @@ namespace EndoscopyApp.ViewModels
             IsVideo = _fileName.StartsWith("REC_") || ext == ".avi" || ext == ".mp4";
 
             _ = GenerateThumbnailAsync();
+            if (!IsVideo) _ = LoadAiSummaryAsync();
+        }
+
+        private async System.Threading.Tasks.Task LoadAiSummaryAsync()
+        {
+            var path = FilePath;
+            var saved = await System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    return AnalysisStore.Exists(path) ? AnalysisStore.Load(path) : null;
+                }
+                catch
+                {
+                    return null;
+                }
+            });
+            if (saved == null) return;
+
+            var view = AiStatusPresenter.Describe(saved);
+            AiSummaryBrush = view.Accent;
+            AiSummary = view.Badge;
         }
 
         private async System.Threading.Tasks.Task GenerateThumbnailAsync()
